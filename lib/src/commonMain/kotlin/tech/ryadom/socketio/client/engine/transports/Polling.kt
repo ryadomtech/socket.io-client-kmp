@@ -63,7 +63,7 @@ open class Polling(
     options: Options,
     logger: KioLogger,
     rawMessage: Boolean,
-    private val httpClientFactory: HttpClientFactory = DefaultHttpClientFactory(options, logger),
+    private val httpClientFactory: HttpClientFactory,
 ) : Transport(NAME, options, rawMessage, logger) {
 
     private var isPolling = false
@@ -138,8 +138,8 @@ open class Polling(
             httpClientFactory.httpRequest(uri) {
                 this.method = method
                 headers { putHeaders(this, requestHeaders) }
-                data?.let { setBody(it) }
                 contentType(ContentType.Application.Json)
+                data?.let { setBody(it) }
             }
         } catch (e: Exception) {
             lpScope.launch { onError("Http exception: ${e.message}") }

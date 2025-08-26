@@ -65,7 +65,7 @@ open class WebSocket(
     options: Options,
     logger: KioLogger,
     rawMessage: Boolean,
-    private val httpClientFactory: HttpClientFactory = DefaultHttpClientFactory(options, logger),
+    private val httpClientFactory: HttpClientFactory,
 ) : Transport(NAME, options, rawMessage, logger) {
 
     private var socketSession: WebSocketSession? = null
