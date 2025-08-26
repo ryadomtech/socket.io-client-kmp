@@ -30,6 +30,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
+import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.http.withCharset
 import io.ktor.util.toMap
@@ -42,10 +43,22 @@ import org.hildan.socketio.SocketIOPacket
 import tech.ryadom.socketio.client.engine.DefaultHttpClientFactory
 import tech.ryadom.socketio.client.engine.HttpClientFactory
 import tech.ryadom.socketio.client.engine.State
-import tech.ryadom.socketio.client.engine.putHeaders
 import tech.ryadom.socketio.client.io.lpScope
 import tech.ryadom.socketio.client.util.KioLogger
+import tech.ryadom.socketio.client.util.putHeaders
 
+/**
+ * Represents a polling transport mechanism for communication.
+ *
+ * This class extends the [Transport] class and provides an implementation
+ * for polling-based communication. It handles opening, pausing, sending,
+ * and closing connections using HTTP requests.
+ *
+ * @property options The configuration options for the transport.
+ * @property logger The logger instance for logging messages.
+ * @property rawMessage A boolean indicating whether raw messages are used.
+ * @property httpClientFactory The factory for creating HTTP clients.
+ */
 open class Polling(
     options: Options,
     logger: KioLogger,
@@ -126,6 +139,7 @@ open class Polling(
                 this.method = method
                 headers { putHeaders(this, requestHeaders) }
                 data?.let { setBody(it) }
+                contentType(ContentType.Application.Json)
             }
         } catch (e: Exception) {
             lpScope.launch { onError("Http exception: ${e.message}") }

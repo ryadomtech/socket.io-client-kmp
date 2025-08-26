@@ -24,6 +24,20 @@
 
 package tech.ryadom.socketio.client.util
 
+/**
+ * Interface for logging messages within the Kio library.
+ * This interface provides a flexible way to integrate with different logging frameworks.
+ *
+ * Implement this interface to customize how log messages are handled.
+ * By default, no logging is performed unless a concrete implementation is provided.
+ *
+ * The `debug`, `info`, `warn`, and `error` functions are convenience methods
+ * that delegate to the `log` function with the appropriate [LogLevel].
+ *
+ * The `message` parameter in the logging functions is a lambda (`() -> String`)
+ * to allow for lazy evaluation of the log message. This can improve performance
+ * if the message construction is expensive and the log level is not enabled.
+ */
 interface KioLogger {
 
     fun debug(message: () -> String) {

@@ -28,12 +28,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.hildan.socketio.EngineIOPacket
 import tech.ryadom.socketio.client.engine.Engine
+import tech.ryadom.socketio.client.engine.HttpClientFactory
 import tech.ryadom.socketio.client.engine.State
 import tech.ryadom.socketio.client.util.Emitter
 import tech.ryadom.socketio.client.util.KioLogger
 import tech.ryadom.socketio.client.util.On
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+
 
 /**
  * The `SocketManager` class is responsible for managing the connection to a Socket.IO server.
@@ -43,6 +45,7 @@ import kotlin.time.Duration.Companion.seconds
  * for different namespaces, all sharing the same underlying connection.
  *
  * @property uri The URI of the Socket.IO server.
+ * @property logger A [KioLogger] instance for logging messages.
  * @property options The configuration options for the connection. See [SocketManager.Options].
  *
  * @see Socket
@@ -52,7 +55,8 @@ import kotlin.time.Duration.Companion.seconds
 class SocketManager(
     private val uri: String,
     private val logger: KioLogger,
-    private val options: Options
+    private val options: Options,
+    private val httpClientFactory: HttpClientFactory
 ) : Emitter() {
 
     /**
@@ -145,7 +149,7 @@ class SocketManager(
             return
         }
 
-        val socket = Engine(uri, options, logger)
+        val socket = Engine(uri, options, logger, httpClientFactory)
         engine = socket
         state = State.OPENING
         shouldSkipReconnect = false

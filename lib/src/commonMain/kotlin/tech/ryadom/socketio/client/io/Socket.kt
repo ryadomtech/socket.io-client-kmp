@@ -48,6 +48,24 @@ import tech.ryadom.socketio.client.util.Emitter
 import tech.ryadom.socketio.client.util.KioLogger
 import tech.ryadom.socketio.client.util.On
 
+/**
+ * Represents a Socket.IO connection to a specific namespace.
+ *
+ * This class handles the low-level details of the Socket.IO protocol, including:
+ * - Opening and closing the connection.
+ * - Sending and receiving events.
+ * - Managing acknowledgements (acks).
+ * - Handling binary data.
+ * - Buffering messages when the connection is not yet established.
+ *
+ * Users typically interact with this class indirectly through the `IO` object,
+ * which provides a higher-level API for creating and managing sockets.
+ *
+ * @property namespace The namespace this socket is connected to.
+ * @property manager The [SocketManager] responsible for the underlying transport.
+ * @property logger The [KioLogger] instance for logging.
+ * @property auth A map of authentication data to be sent during connection.
+ */
 class Socket(
     val namespace: String,
     private val manager: SocketManager,

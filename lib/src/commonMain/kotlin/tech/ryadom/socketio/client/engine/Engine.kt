@@ -38,11 +38,25 @@ import tech.ryadom.socketio.client.util.Emitter
 import tech.ryadom.socketio.client.util.KioLogger
 import tech.ryadom.socketio.client.util.On
 
+/**
+ * The `Engine` class is responsible for managing the connection to the server,
+ * handling transports, and processing Engine.IO packets. It extends [Emitter]
+ * to allow for event-based communication.
+ *
+ * This class orchestrates the lifecycle of the connection, including opening,
+ * closing, upgrading transports, and handling heartbeats.
+ *
+ * @property uri The URI of the Engine.IO server.
+ * @property options Configuration options for the Engine.
+ * @property logger A [KioLogger] instance for logging.
+ * @property rawMessage A boolean indicating whether to process messages as raw binary data.
+ *                      Defaults to `false`.
+ */
 class Engine(
     uri: String,
     internal val options: Options,
     private val logger: KioLogger,
-    private val factory: TransportFactory = DefaultTransportFactory,
+    private val httpClientFactory: HttpClientFactory,
     private val rawMessage: Boolean = false
 ) : Emitter() {
 
@@ -159,9 +173,28 @@ class Engine(
     private fun createTransport(name: String): Transport {
         val query = configureTransportQuery(name)
         val transportOpts = createTransportOptions(name, query)
-        return factory.create(name, transportOpts, logger, rawMessage).also {
-            emit(EVENT_TRANSPORT, it)
+
+        val transport = when (name) {
+            WebSocket.NAME -> WebSocket(
+                options = transportOpts,
+                logger = logger,
+                rawMessage = rawMessage,
+                httpClientFactory = httpClientFactory
+            )
+
+            Polling.NAME -> Polling(
+                options = transportOpts,
+                logger = logger,
+                rawMessage = rawMessage,
+                httpClientFactory = httpClientFactory
+            )
+
+            else -> throw IllegalArgumentException("Illegal transport name: $name")
         }
+
+        emit(EVENT_TRANSPORT, transport)
+
+        return transport
     }
 
     private fun configureTransportQuery(name: String): MutableMap<String, String> {

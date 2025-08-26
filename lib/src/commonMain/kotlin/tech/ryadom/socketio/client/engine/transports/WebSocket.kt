@@ -43,10 +43,24 @@ import org.hildan.socketio.SocketIOPacket
 import tech.ryadom.socketio.client.engine.DefaultHttpClientFactory
 import tech.ryadom.socketio.client.engine.HttpClientFactory
 import tech.ryadom.socketio.client.engine.State
-import tech.ryadom.socketio.client.engine.putHeaders
 import tech.ryadom.socketio.client.io.lpScope
 import tech.ryadom.socketio.client.util.KioLogger
+import tech.ryadom.socketio.client.util.putHeaders
 
+/**
+ * Represents a WebSocket transport layer for Engine.IO communication.
+ *
+ * This class handles the establishment and management of a WebSocket connection
+ * for sending and receiving Engine.IO packets. It extends the [Transport] class
+ * and implements the specific logic for WebSocket communication.
+ *
+ * @property options The configuration options for the transport.
+ * @property logger The logger instance for logging messages.
+ * @property rawMessage A boolean indicating whether messages should be treated as raw Engine.IO packets
+ *                      or as Socket.IO packets.
+ * @property httpClientFactory A factory for creating HTTP clients, used for establishing the WebSocket connection.
+ *                             Defaults to [DefaultHttpClientFactory].
+ */
 open class WebSocket(
     options: Options,
     logger: KioLogger,
