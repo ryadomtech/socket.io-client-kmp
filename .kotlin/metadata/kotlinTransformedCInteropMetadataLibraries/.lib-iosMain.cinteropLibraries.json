@@ -1,0 +1,27 @@
+[
+  {
+    "moduleId": "org.jetbrains.kotlinx:atomicfu:0.29.0",
+    "file": "/Users/kozlovskiy/StudioProjects/socket.io-client-kmp/.kotlin/metadata/kotlinTransformedCInteropMetadataLibraries/org.jetbrains.kotlinx-atomicfu-0.29.0-iosMain-cinterop/org.jetbrains.kotlinx_atomicfu-cinterop-interop-kCq7Ng.klib",
+    "sourceSetName": "iosMain"
+  },
+  {
+    "moduleId": "io.ktor:ktor-network:3.2.3",
+    "file": "/Users/kozlovskiy/StudioProjects/socket.io-client-kmp/.kotlin/metadata/kotlinTransformedCInteropMetadataLibraries/io.ktor-ktor-network-3.2.3-iosMain-cinterop/io.ktor_ktor-network-cinterop-network-oBBWEw.klib",
+    "sourceSetName": "iosMain"
+  },
+  {
+    "moduleId": "io.ktor:ktor-network:3.2.3",
+    "file": "/Users/kozlovskiy/StudioProjects/socket.io-client-kmp/.kotlin/metadata/kotlinTransformedCInteropMetadataLibraries/io.ktor-ktor-network-3.2.3-iosMain-cinterop/io.ktor_ktor-network-cinterop-un-oBBWEw.klib",
+    "sourceSetName": "iosMain"
+  },
+  {
+    "moduleId": "io.ktor:ktor-utils:3.2.3",
+    "file": "/Users/kozlovskiy/StudioProjects/socket.io-client-kmp/.kotlin/metadata/kotlinTransformedCInteropMetadataLibraries/io.ktor-ktor-utils-3.2.3-iosMain-cinterop/io.ktor_ktor-utils-cinterop-threadUtils-bD5GGA.klib",
+    "sourceSetName": "iosMain"
+  },
+  {
+    "moduleId": "io.ktor:ktor-io:3.2.3",
+    "file": "/Users/kozlovskiy/StudioProjects/socket.io-client-kmp/.kotlin/metadata/kotlinTransformedCInteropMetadataLibraries/io.ktor-ktor-io-3.2.3-iosMain-cinterop/io.ktor_ktor-io-cinterop-mutex-xZzb1w.klib",
+    "sourceSetName": "iosMain"
+  }
+]
