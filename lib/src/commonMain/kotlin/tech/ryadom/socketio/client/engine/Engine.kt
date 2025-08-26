@@ -129,7 +129,6 @@ class Engine(
         }
     }
 
-    fun send(vararg packet: EngineIOPacket<*>) = sendPackets(packet.toList())
     fun send(packets: List<EngineIOPacket<*>>) = sendPackets(packets)
 
     fun close() {
