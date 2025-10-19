@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.publishing)
 }
 
-private val rootVersion = "0.0.1"
+private val rootVersion = "0.0.3"
 
 kotlin {
     jvm()
@@ -83,6 +83,12 @@ kotlin {
         wasmJsMain {
             dependencies {
                 implementation(libs.ktor.client.wasm)
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation(libs.kotlin.test)
             }
         }
     }
