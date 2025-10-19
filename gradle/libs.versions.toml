@@ -1,17 +1,18 @@
 [versions]
-activity-compose = "1.10.1"
-agp = "8.12.0"
+activity-compose = "1.11.0"
+agp = "8.13.0"
 atomicfu = "0.29.0"
-kotlin = "2.2.0"
+kotlin = "2.2.20"
 publishing = "0.34.0"
-ktor = "3.2.3"
-compose-multiplatform = "1.8.2"
-logging = "2.0.3"
+ktor = "3.3.1"
+compose-multiplatform = "1.9.0"
+logging = "2.1.0"
+socket-io-parser = "2.6.0"
 
 [libraries]
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
 atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
-socketioParser = "org.hildan.socketio:socketio-kotlin:2.6.0"
+socket-io-parser = { module = "org.hildan.socketio:socketio-kotlin", version.ref = "socket-io-parser" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
@@ -21,6 +22,8 @@ ktor-client-js = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 logging = { module = "com.diamondedge:logging", version.ref = "logging" }
+
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 
 [plugins]
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

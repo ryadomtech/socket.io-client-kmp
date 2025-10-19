@@ -25,36 +25,29 @@ In your shared module's build.gradle.kts add:
 
 ```Gradle Kotlin DSL
 kotlin.sourceSets.commonMain.dependencies {
-  implementation("tech.ryadom:kio:0.0.1")
+  implementation("tech.ryadom:kio:0.0.3")
 }
 ```
 
 ### Usage
 ```Kotlin
-val socket: KioSocket = KioSocket.io("https://yourdomain.com") {
+val socket: Socket = kioSocket("https://yourdomain.com") {
+    
+    // Configure min. log level or set custom logger
     logging {
-        level = LoggingLevel.INFO
+        level = LogLevel.INFO
     }
 
+    // Configure socket.io options
     options {
         isSecure = true
         allowCredentials = true
     }
-
-    on(Event.Any) { event ->
-        // Process any incoming packet
-    }
-
-    on(Event.Disconnected) {
-        // Process event
-    }
-
-    on(Event.Message) {
-        // Process incoming message
-    }
-
-    connect()
 }
+
+socket.on("event") {} // For specific event
+socket.once("event") {} // Once for specific event
+socket.onAny {} // For any events
 ```
 
 ### Support

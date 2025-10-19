@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.publishing)
 }
 
-private val rootVersion = "0.0.1"
+private val rootVersion = "0.0.3"
 
 kotlin {
     jvm()
@@ -48,10 +48,11 @@ kotlin {
 
         commonMain {
             dependencies {
-                implementation(libs.socketioParser)
+                api(libs.socket.io.parser)
                 api(libs.ktor.client.core)
                 api(libs.ktor.client.logging)
                 api(libs.ktor.client.websockets)
+
                 implementation(libs.atomicfu)
             }
         }
@@ -85,6 +86,12 @@ kotlin {
                 implementation(libs.ktor.client.wasm)
             }
         }
+
+        commonTest {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
     }
 }
 
@@ -93,7 +100,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        minSdk = 26
+        minSdk = 23
     }
 
     compileOptions {

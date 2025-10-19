@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "kmp-socketio-client"
+rootProject.name = "kio"
 include(":lib", ":sample")
