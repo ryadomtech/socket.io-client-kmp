@@ -34,15 +34,30 @@ import tech.ryadom.kio.util.KioLogger
 import tech.ryadom.kio.util.QSParsingUtils
 
 /**
+ * Configuration options for the transport.
+ */
+open class TransportOptions {
+    var isSecure: Boolean = false
+    var hostname: String = ""
+    var port: Int = -1
+    var path: String = ""
+    var isTimestampRequests: Boolean = false
+    var timestampParam: String = "t"
+    var query: MutableMap<String, String> = mutableMapOf()
+    var extraHeaders: Map<String, List<String>> = mapOf()
+    var isTrustAllCerts: Boolean = false
+}
+
+/**
  * Abstract base class for all transport implementations.
  *
  * @param name The name of the transport (e.g., "websocket", "polling")
  * @param options Configuration options for the transport
  * @param rawMessage Whether to handle messages as raw binary data
  */
-abstract class Transport(
+internal abstract class Transport(
     val name: String,
-    internal val options: Options,
+    internal val options: TransportOptions,
     protected val rawMessage: Boolean,
     protected val logger: KioLogger
 ) : Emitter() {
@@ -51,21 +66,6 @@ abstract class Transport(
      * Default IO scope
      */
     protected val ioScope: CoroutineScope = CoroutineScope(Dispatchers.Default)
-
-    /**
-     * Configuration options for the transport.
-     */
-    open class Options {
-        var isSecure: Boolean = false
-        var hostname: String = ""
-        var port: Int = -1
-        var path: String = ""
-        var isTimestampRequests: Boolean = false
-        var timestampParam: String = "t"
-        var query: MutableMap<String, String> = mutableMapOf()
-        var extraHeaders: Map<String, List<String>> = mapOf()
-        var isTrustAllCerts: Boolean = false
-    }
 
     protected var state: State = State.INIT
     internal var isWritable: Boolean = false

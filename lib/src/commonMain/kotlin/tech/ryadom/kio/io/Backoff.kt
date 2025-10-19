@@ -28,7 +28,7 @@ import io.ktor.util.date.GMTDate
 import kotlin.math.floor
 import kotlin.random.Random
 
-class Backoff(
+internal class Backoff(
     initialMin: Long = 100,
     initialMax: Long = 10000,
     initialFactor: Int = 2,

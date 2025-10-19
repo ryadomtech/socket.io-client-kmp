@@ -32,11 +32,27 @@ import kotlinx.coroutines.launch
 import org.hildan.socketio.EngineIOPacket
 import tech.ryadom.kio.engine.transports.Polling
 import tech.ryadom.kio.engine.transports.Transport
+import tech.ryadom.kio.engine.transports.TransportOptions
 import tech.ryadom.kio.engine.transports.WebSocket
 import tech.ryadom.kio.lpScope
 import tech.ryadom.kio.util.Emitter
 import tech.ryadom.kio.util.KioLogger
 import tech.ryadom.kio.util.On
+
+/**
+ * Configuration options for the Engine.
+ *
+ * @property transports List of allowed transports in order of preference
+ * @property upgrade Whether to allow transport upgrades
+ * @property rememberUpgrade Remember successful websocket upgrade for future connections
+ * @property transportOptions Transport-specific configuration options
+ */
+open class EngineOptions : TransportOptions() {
+    var transports: List<String> = listOf(Polling.NAME, WebSocket.NAME)
+    var upgrade = true
+    var rememberUpgrade = false
+    var transportOptions: Map<String, TransportOptions> = mapOf()
+}
 
 /**
  * The `Engine` class is responsible for managing the connection to the server,
@@ -52,28 +68,13 @@ import tech.ryadom.kio.util.On
  * @property rawMessage A boolean indicating whether to process messages as raw binary data.
  *                      Defaults to `false`.
  */
-class Engine(
+internal class Engine(
     uri: String,
-    internal val options: Options,
+    internal val options: EngineOptions,
     private val logger: KioLogger,
     private val httpClientFactory: HttpClientFactory,
     private val rawMessage: Boolean = false
 ) : Emitter() {
-
-    /**
-     * Configuration options for the Engine.
-     *
-     * @property transports List of allowed transports in order of preference
-     * @property upgrade Whether to allow transport upgrades
-     * @property rememberUpgrade Remember successful websocket upgrade for future connections
-     * @property transportOptions Transport-specific configuration options
-     */
-    open class Options : Transport.Options() {
-        var transports: List<String> = listOf(Polling.NAME, WebSocket.NAME)
-        var upgrade = true
-        var rememberUpgrade = false
-        var transportOptions: Map<String, Transport.Options> = mapOf()
-    }
 
     // Connection state management
     private var state = State.INIT
@@ -209,9 +210,9 @@ class Engine(
     private fun createTransportOptions(
         name: String,
         query: MutableMap<String, String>
-    ): Transport.Options {
+    ): TransportOptions {
         val baseOpts = options.transportOptions[name]
-        return Transport.Options().apply {
+        return TransportOptions().apply {
             this.query = query
             isSecure = baseOpts?.isSecure ?: options.isSecure
             hostname = baseOpts?.hostname ?: options.hostname

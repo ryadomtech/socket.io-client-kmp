@@ -30,7 +30,7 @@ package tech.ryadom.kio.util
  * This object provides a utility function to register an event listener
  * and return a handle that can be used to unregister the listener later.
  */
-object On {
+internal object On {
 
     /**
      * Creates an [Emitter.Listener] on the [Emitter].

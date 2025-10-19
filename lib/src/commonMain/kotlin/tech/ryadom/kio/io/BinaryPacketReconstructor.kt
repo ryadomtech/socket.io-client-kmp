@@ -40,7 +40,7 @@ import org.hildan.socketio.SocketIOPacket
  *                  It receives a boolean indicating if the packet is an acknowledgment, the acknowledgment ID (if any),
  *                  and the reconstructed payload as an ArrayList of Any.
  */
-class BinaryPacketReconstructor(
+internal class BinaryPacketReconstructor(
     private val packet: SocketIOPacket.BinaryMessage,
     private val emitter: (isAck: Boolean, ackId: Int?, ArrayList<Any>) -> Unit,
 ) {

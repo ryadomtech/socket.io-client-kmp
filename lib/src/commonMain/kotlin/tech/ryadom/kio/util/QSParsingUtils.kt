@@ -33,7 +33,7 @@ package tech.ryadom.kio.util
  *
  * It utilizes [UriUtils] for URL encoding and decoding of individual keys and values.
  */
-object QSParsingUtils {
+internal object QSParsingUtils {
 
     /**
      * Encode a map of key-value pairs into a query string.

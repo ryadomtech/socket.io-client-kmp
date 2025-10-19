@@ -27,7 +27,7 @@ package tech.ryadom.kio.engine
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 
-expect fun HttpClient(
+internal expect fun HttpClient(
     trustAllCerts: Boolean = false,
     config: HttpClientConfig<*>.() -> Unit = {}
 ): HttpClient

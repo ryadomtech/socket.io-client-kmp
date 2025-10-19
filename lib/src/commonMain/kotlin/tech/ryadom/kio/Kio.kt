@@ -8,6 +8,7 @@ import tech.ryadom.kio.engine.DefaultHttpClientFactory
 import tech.ryadom.kio.engine.HttpClientFactory
 import tech.ryadom.kio.io.Socket
 import tech.ryadom.kio.io.SocketManager
+import tech.ryadom.kio.io.SocketManagerOptions
 import tech.ryadom.kio.util.KioLogger
 import tech.ryadom.kio.util.LogLevel
 import tech.ryadom.kio.util.NaiveLogger
@@ -35,7 +36,7 @@ class LoggingConfig {
     }
 }
 
-class OptionsConfig : SocketManager.Options() {
+class OptionsConfig : SocketManagerOptions() {
     var forceNew = false
     var multiplex = true
 }

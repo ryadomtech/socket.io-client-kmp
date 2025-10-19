@@ -30,7 +30,10 @@ import io.ktor.client.engine.cio.CIO
 import java.security.cert.X509Certificate
 import javax.net.ssl.X509TrustManager
 
-actual fun HttpClient(trustAllCerts: Boolean, config: HttpClientConfig<*>.() -> Unit): HttpClient =
+internal actual fun HttpClient(
+    trustAllCerts: Boolean,
+    config: HttpClientConfig<*>.() -> Unit
+): HttpClient =
     HttpClient(CIO) {
         config(this)
         if (trustAllCerts) {

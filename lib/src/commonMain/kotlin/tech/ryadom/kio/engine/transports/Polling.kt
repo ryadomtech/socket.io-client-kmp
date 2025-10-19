@@ -58,8 +58,8 @@ import tech.ryadom.kio.util.putHeaders
  * @property rawMessage A boolean indicating whether raw messages are used.
  * @property httpClientFactory The factory for creating HTTP clients.
  */
-open class Polling(
-    options: Options,
+internal open class Polling(
+    options: TransportOptions,
     logger: KioLogger,
     rawMessage: Boolean,
     private val httpClientFactory: HttpClientFactory,

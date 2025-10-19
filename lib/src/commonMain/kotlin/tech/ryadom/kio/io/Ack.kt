@@ -29,14 +29,14 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-fun interface Ack {
+internal fun interface Ack {
     fun call(vararg args: Any)
 }
 
 /**
  * Represents an acknowledgment (ack) that can time out.
  */
-abstract class AckWithTimeout(val timeout: Long) : Ack {
+internal abstract class AckWithTimeout(val timeout: Long) : Ack {
     private var job: Job? = null
 
     override fun call(vararg args: Any) {

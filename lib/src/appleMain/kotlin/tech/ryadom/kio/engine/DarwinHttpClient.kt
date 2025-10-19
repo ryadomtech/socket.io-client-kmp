@@ -33,7 +33,10 @@ import platform.Foundation.create
 import platform.Foundation.serverTrust
 
 @BetaInteropApi
-actual fun HttpClient(trustAllCerts: Boolean, config: HttpClientConfig<*>.() -> Unit): HttpClient {
+internal actual fun HttpClient(
+    trustAllCerts: Boolean,
+    config: HttpClientConfig<*>.() -> Unit
+): HttpClient {
     return HttpClient(Darwin) {
         config(this)
         engine {

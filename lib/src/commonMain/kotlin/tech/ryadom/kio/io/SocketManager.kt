@@ -27,8 +27,8 @@ package tech.ryadom.kio.io
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.hildan.socketio.EngineIOPacket
-import tech.ryadom.kio.OptionsConfig
 import tech.ryadom.kio.engine.Engine
+import tech.ryadom.kio.engine.EngineOptions
 import tech.ryadom.kio.engine.HttpClientFactory
 import tech.ryadom.kio.engine.State
 import tech.ryadom.kio.lpScope
@@ -39,6 +39,54 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /**
+ * Configuration options for the [SocketManager].
+ *
+ * @property isReconnection Whether to enable reconnection. Default is `true`.
+ * @property reconnectionAttempts The maximum number of reconnection attempts. Default is `Int.MAX_VALUE`.
+ * @property reconnectionDelay The initial delay before attempting to reconnect. Default is `1.seconds`.
+ * @property reconnectionDelayMax The maximum delay between reconnection attempts. Default is `5.seconds`.
+ * @property randomizationFactor A factor to randomize the reconnection delay. Default is `0.5`.
+ * @property auth A map of authentication data to be sent with the connection request. Default is an empty map.
+ * @property timeout The connection timeout duration. Default is `20.seconds`.
+ */
+open class SocketManagerOptions : EngineOptions() {
+    internal lateinit var backoff: Backoff
+
+    var isReconnection = true
+
+    var reconnectionAttempts: Int = Int.MAX_VALUE
+    var reconnectionDelay: Duration = 5.seconds
+        set(value) {
+            if (::backoff.isInitialized) {
+                backoff.min = value.inWholeMilliseconds
+            }
+
+            field = value
+        }
+
+    var reconnectionDelayMax: Duration = 10.seconds
+        set(value) {
+            if (::backoff.isInitialized) {
+                backoff.max = value.inWholeMilliseconds
+            }
+
+            field = value
+        }
+
+    var randomizationFactor: Double = 0.5
+        set(value) {
+            if (::backoff.isInitialized) {
+                backoff.jitter = value
+            }
+
+            field = value
+        }
+
+    var auth: Map<String, String> = mapOf()
+    var timeout: Duration = 20.seconds
+}
+
+/**
  * The `SocketManager` class is responsible for managing the connection to a Socket.IO server.
  * It handles the underlying Engine.IO connection, including reconnection logic and event emission.
  *
@@ -47,72 +95,24 @@ import kotlin.time.Duration.Companion.seconds
  *
  * @property uri The URI of the Socket.IO server.
  * @property logger A [KioLogger] instance for logging messages.
- * @property options The configuration options for the connection. See [SocketManager.Options].
+ * @property options The configuration options for the connection. See [SocketManagerOptions].
  *
  * @see Socket
  * @see Engine
- * @see Options
+ * @see SocketManagerOptions
  */
 class SocketManager(
     private val uri: String,
     private val logger: KioLogger,
-    private val options: OptionsConfig,
+    private val options: SocketManagerOptions,
     private val httpClientFactory: HttpClientFactory
 ) : Emitter() {
-
-    /**
-     * Configuration options for the [SocketManager].
-     *
-     * @property isReconnection Whether to enable reconnection. Default is `true`.
-     * @property reconnectionAttempts The maximum number of reconnection attempts. Default is `Int.MAX_VALUE`.
-     * @property reconnectionDelay The initial delay before attempting to reconnect. Default is `1.seconds`.
-     * @property reconnectionDelayMax The maximum delay between reconnection attempts. Default is `5.seconds`.
-     * @property randomizationFactor A factor to randomize the reconnection delay. Default is `0.5`.
-     * @property auth A map of authentication data to be sent with the connection request. Default is an empty map.
-     * @property timeout The connection timeout duration. Default is `20.seconds`.
-     */
-    open class Options : Engine.Options() {
-        internal lateinit var backoff: Backoff
-
-        var isReconnection = true
-
-        var reconnectionAttempts: Int = Int.MAX_VALUE
-        var reconnectionDelay: Duration = 5.seconds
-            set(value) {
-                if (::backoff.isInitialized) {
-                    backoff.min = value.inWholeMilliseconds
-                }
-
-                field = value
-            }
-
-        var reconnectionDelayMax: Duration = 10.seconds
-            set(value) {
-                if (::backoff.isInitialized) {
-                    backoff.max = value.inWholeMilliseconds
-                }
-
-                field = value
-            }
-
-        var randomizationFactor: Double = 0.5
-            set(value) {
-                if (::backoff.isInitialized) {
-                    backoff.jitter = value
-                }
-
-                field = value
-            }
-
-        var auth: Map<String, String> = mapOf()
-        var timeout: Duration = 20.seconds
-    }
 
     internal var engine: Engine? = null
     internal var isReconnecting = false
         private set
 
-    internal var state = tech.ryadom.kio.engine.State.INIT
+    internal var state = State.INIT
         private set
 
     internal val namespaceSockets = mutableMapOf<String, Socket>()

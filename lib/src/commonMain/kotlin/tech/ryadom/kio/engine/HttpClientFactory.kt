@@ -28,7 +28,7 @@ interface HttpClientFactory {
     ): HttpResponse
 }
 
-class DefaultHttpClientFactory(
+internal class DefaultHttpClientFactory(
     options: OptionsConfig,
     loggingConfig: LoggingConfig
 ) : HttpClientFactory {

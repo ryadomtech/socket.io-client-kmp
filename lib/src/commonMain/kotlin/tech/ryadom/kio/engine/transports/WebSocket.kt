@@ -60,8 +60,8 @@ import tech.ryadom.kio.util.putHeaders
  * @property httpClientFactory A factory for creating HTTP clients, used for establishing the WebSocket connection.
  *                             Defaults to [DefaultHttpClientFactory].
  */
-open class WebSocket(
-    options: Options,
+internal open class WebSocket(
+    options: TransportOptions,
     logger: KioLogger,
     rawMessage: Boolean,
     private val httpClientFactory: HttpClientFactory,

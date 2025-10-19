@@ -30,7 +30,7 @@ package tech.ryadom.kio.util
  * This object provides functions to perform URI encoding and decoding,
  * handling special characters and percent-encoding as per URI specifications.
  */
-object UriUtils {
+internal object UriUtils {
 
     /**
      * Encodes a string for use in a URI.
