@@ -125,9 +125,9 @@ class SocketManager(
         }
 
         options.backoff = Backoff(
-            min = options.reconnectionDelay.inWholeMilliseconds,
-            max = options.reconnectionDelayMax.inWholeMilliseconds,
-            jitter = options.randomizationFactor
+            initialMin = options.reconnectionDelay.inWholeMilliseconds,
+            initialMax = options.reconnectionDelayMax.inWholeMilliseconds,
+            initialJitter = options.randomizationFactor
         )
     }
 
@@ -265,7 +265,7 @@ class SocketManager(
     }
 
     private fun maybeReconnectOnOpen() {
-        if (!isReconnecting && options.isReconnection && options.backoff.attempts == 0) {
+        if (!isReconnecting && options.isReconnection && options.backoff.attemptsCount == 0) {
             reconnect()
         }
     }
@@ -275,12 +275,12 @@ class SocketManager(
             return
         }
 
-        if (options.backoff.attempts >= options.reconnectionAttempts) {
+        if (options.backoff.attemptsCount >= options.reconnectionAttempts) {
             options.backoff.reset()
             emit(EVENT_RECONNECT_FAILED)
             isReconnecting = false
         } else {
-            val delay = options.backoff.duration
+            val delay = options.backoff.duration()
             isReconnecting = true
 
             val job = lpScope.launch {
@@ -289,7 +289,7 @@ class SocketManager(
                     return@launch
                 }
 
-                emit(EVENT_RECONNECT_ATTEMPT, options.backoff.attempts)
+                emit(EVENT_RECONNECT_ATTEMPT, options.backoff.attemptsCount)
 
                 // Double check
                 if (shouldSkipReconnect) {

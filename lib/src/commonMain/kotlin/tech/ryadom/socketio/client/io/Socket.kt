@@ -82,6 +82,8 @@ class Socket(
     private val recvBuffer = arrayListOf<ArrayList<Any>>()
     private var reconstructor: BinaryPacketReconstructor? = null
 
+    private val onAnyIncomingListeners = arrayListOf<Listener>()
+
     private var sessionId = ""
 
     fun open() {
@@ -115,6 +117,18 @@ class Socket(
 
     fun send(vararg args: Any): Socket {
         return emit(EVENT_MESSAGE, *args) as Socket
+    }
+
+    fun onAnyIncoming(listener: Listener) {
+        onAnyIncomingListeners.add(listener)
+    }
+
+    fun offAnyIncoming() {
+        onAnyIncomingListeners.clear()
+    }
+
+    fun offAnyIncoming(fn: Listener) {
+        onAnyIncomingListeners.remove(fn)
     }
 
     override fun emit(event: String, vararg args: Any): Emitter {
@@ -370,11 +384,11 @@ class Socket(
             data.add(createAck(eventId))
         }
 
-        if (data.isEmpty()) {
-            return
-        }
-
         if (connected) {
+            if (data.isEmpty()) {
+                return
+            }
+
             fireEvent(data)
         } else {
             recvBuffer.add(data)
@@ -397,6 +411,10 @@ class Socket(
             } else {
                 data[it]
             }
+        }
+
+        onAnyIncomingListeners.forEach {
+            it.call(args)
         }
 
         super.emit(ev, *args)

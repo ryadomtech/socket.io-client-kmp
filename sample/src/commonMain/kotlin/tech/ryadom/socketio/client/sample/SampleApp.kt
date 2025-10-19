@@ -36,12 +36,14 @@ class SampleStateHolder {
                     logging("KIO [$level]").info { message }
                     cause?.printStackTrace()
                 }
-
             }
         ) {
-
             socket = this
-            open()
+            socket?.onAnyIncoming {
+                println("ANY $it")
+            }
+
+            socket?.open()
         }
     }
 }

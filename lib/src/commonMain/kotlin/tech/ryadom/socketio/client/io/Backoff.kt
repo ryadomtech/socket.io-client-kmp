@@ -24,63 +24,57 @@
 
 package tech.ryadom.socketio.client.io
 
-import io.ktor.util.date.GMTDate
 import kotlin.math.pow
 import kotlin.random.Random
 
-/**
- * Configurable backoff timer implementation.
- *
- * @property jitter Randomness factor between 0.0 and 1.0 [default: 0.0]
- * @property factor Multiplication factor for exponential backoff [default: 2.0]
- * @property min Initial timeout in milliseconds [default: 100]
- * @property max Maximum timeout in milliseconds [default: 10000]
- */
 class Backoff(
-    jitter: Double = 0.0,
-    private val factor: Double = 2.0,
-    var min: Long = 100,
-    var max: Long = 10_000,
+    initialMin: Long = 100,
+    initialMax: Long = 10000,
+    initialFactor: Int = 2,
+    initialJitter: Double = 0.0
 ) {
-    private val random = Random(GMTDate().timestamp)
-
-    init {
-        require(jitter in 0.0..1.0) { "Jitter must be between 0.0 and 1.0" }
-    }
-
-    var attempts: Int = 0
-        private set
-
-    var jitter: Double = jitter
+    var min: Long = initialMin
         set(value) {
-            require(value in 0.0..1.0) { "Jitter must be between 0.0 and 1.0" }
+            field = value.coerceAtLeast(0)
+        }
+
+    var max: Long = initialMax
+        set(value) {
+            field = value.coerceAtLeast(min)
+        }
+
+    var factor: Int = initialFactor
+        set(value) {
+            field = value.coerceAtLeast(1)
+        }
+
+    var jitter: Double = initialJitter
+        set(value) {
+            require(value in 0.0..<1.0) { "jitter must be between 0 and 1" }
             field = value
         }
 
-    /**
-     * Calculates the next backoff duration with exponential growth and optional jitter.
-     * @return The calculated duration in milliseconds, clamped between min and max
-     */
-    val duration: Long
-        get() {
-            val baseDuration = (min * factor.pow(attempts++)).toLong()
-            val durationWithJitter = if (jitter > 0.0) applyJitter(baseDuration) else baseDuration
-            return durationWithJitter.coerceIn(min, max)
+    private var attempts: Int = 0
+
+    fun duration(): Long {
+        val base = min * factor.toDouble().pow(attempts).toLong()
+        attempts++
+
+        var result = base.toDouble()
+
+        if (jitter > 0) {
+            val rand = Random.nextDouble()
+            val deviation = jitter * rand * base
+            result = if (Random.nextBoolean()) result - deviation else result + deviation
         }
 
-    /**
-     * Resets the attempt counter to zero.
-     * @return The number of attempts before reset
-     */
-    fun reset(): Int = attempts.also { attempts = 0 }
-
-    private fun applyJitter(baseDuration: Long): Long {
-        val randomValue = random.nextDouble()
-        val deviation = randomValue * jitter * baseDuration
-        return if (random.nextBoolean()) {
-            (baseDuration - deviation).toLong()
-        } else {
-            (baseDuration + deviation).toLong()
-        }
+        return result.toLong().coerceIn(min, max)
     }
+
+    fun reset() {
+        attempts = 0
+    }
+
+    val attemptsCount: Int
+        get() = attempts
 }
