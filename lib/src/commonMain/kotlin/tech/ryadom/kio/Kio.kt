@@ -1,3 +1,27 @@
+/*
+    MIT License
+
+    Copyright (c) 2025 Ryadom Tech
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+*/
+
 package tech.ryadom.kio
 
 import io.ktor.http.Url
@@ -79,6 +103,45 @@ internal val lpScope = CoroutineScope(
 
 private val socketManagers = mutableMapOf<String, SocketManager>()
 
+/**
+ * Creates and configures a `Socket.IO` client socket.
+ *
+ * This function serves as the primary entry point for establishing a connection to a Socket.IO server. It leverages a
+ * DSL for configuration, allowing for detailed setup of connection options, logging, and underlying HTTP client behavior.
+ *
+ * It manages socket connections to efficiently reuse existing underlying transport connections (multiplexing)
+ * whenever possible. A new transport connection is established only when necessary, such as when connecting to a
+ * new host/port, when `forceNew` is `true`, or when multiplexing is disabled.
+ *
+ * Example usage:
+ * ```kotlin
+ * val socket = kioSocket("http://localhost:3000") {
+ *     // Configure logging
+ *     logging {
+ *         logLevel(LogLevel.DEBUG)
+ *     }
+ *
+ *     // Configure connection options
+ *     options {
+ *         auth = mapOf("token" to "your_auth_token")
+ *         forceNew = false // Explicitly allow multiplexing
+ *     }
+ *
+ *     // (Optional) Provide a custom HTTP client factory
+ *     httpClientFactory {
+ *         DefaultHttpClientFactory(options, logging)
+ *     }
+ * }
+ *
+ * socket.connect()
+ * ```
+ *
+ * @param uri The URI of the Socket.IO server (e.g., "http://localhost:3000/"). The path component
+ *   is used to determine the namespace (e.g., "/admin"). If no path is provided, it defaults to the root namespace "/".
+ * @param f A lambda with [SocketConfig] as its receiver, used to configure the socket connection via a DSL.
+ * @return A [Socket] instance configured and ready to connect.
+ *
+ */
 @KioDsl
 fun kioSocket(uri: String, f: SocketConfig.() -> Unit): Socket {
     val config = SocketConfig()

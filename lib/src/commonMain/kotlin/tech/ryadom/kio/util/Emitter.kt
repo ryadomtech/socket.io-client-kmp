@@ -50,7 +50,8 @@ open class Emitter {
      */
     private data class ThreadSafeState(
         val callbacks: Map<String, List<Listener>> = mapOf(),
-        val onceCallbacks: Map<String, List<Listener>> = mapOf()
+        val onceCallbacks: Map<String, List<Listener>> = mapOf(),
+        val onAnyCallbacks: Set<Listener> = setOf()
     )
 
     private val threadSafeState = atomic(
@@ -77,6 +78,12 @@ open class Emitter {
 
     fun once(event: String, block: (Array<out Any>) -> Unit): Emitter {
         return once(event, listener = block)
+    }
+
+    fun onAny(listener: Listener): Emitter = apply {
+        updateState { current ->
+            current.copy(onAnyCallbacks = current.onAnyCallbacks + listener)
+        }
     }
 
     fun off(): Emitter = apply {
@@ -109,9 +116,18 @@ open class Emitter {
         }
     }
 
+    fun offAny(listener: Listener): Emitter = apply {
+        updateState { current ->
+            current.copy(onAnyCallbacks = current.onAnyCallbacks - listener)
+        }
+    }
+
     open fun emit(event: String, vararg args: Any): Emitter = apply {
         val (callbacks, onceCallbacks) = threadSafeState.value.let {
-            it.callbacks[event].orEmpty() to it.onceCallbacks[event].orEmpty()
+            Pair(
+                first = it.callbacks[event].orEmpty() + it.onAnyCallbacks,
+                second = it.onceCallbacks[event].orEmpty()
+            )
         }
 
         if (callbacks.isNotEmpty() || onceCallbacks.isNotEmpty()) {

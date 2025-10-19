@@ -1,10 +1,11 @@
 package tech.ryadom.kio.client.sample.ui
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -51,11 +52,13 @@ fun SampleApp() {
         bottomBar = {
             Row(
                 modifier = Modifier.fillMaxWidth()
-                    .padding(4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(4.dp)
+                    .imePadding()
+                    .navigationBarsPadding(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 TextField(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.weight(1f),
                     value = messageToSend,
                     onValueChange = { messageToSend = it }
                 )
@@ -71,41 +74,14 @@ fun SampleApp() {
             }
         }
     ) { paddingValues ->
-        val events by stateHolder.events.collectAsState()
-        val (incoming, outgoing) = events.partition { it.type == "in" }
+        val events by stateHolder.events.collectAsState(
+            listOf()
+        )
 
-        Row(
+        LazyColumn(
             modifier = Modifier.fillMaxSize()
-                .padding(paddingValues)
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth()
-                    .weight(1f)
-            ) {
-                Text(text = "Incoming")
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(incoming) { event ->
-                        Text(text = event.content)
-                    }
-                }
-            }
-
-            Column(
-                modifier = Modifier.fillMaxWidth()
-                    .weight(1f)
-            ) {
-                Text(text = "Outgoing")
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(outgoing) { event ->
-                        Text(text = event.content)
-                    }
-                }
-            }
+            items(events) { event -> Text(text = event) }
         }
     }
 }
-

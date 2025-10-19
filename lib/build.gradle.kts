@@ -48,10 +48,11 @@ kotlin {
 
         commonMain {
             dependencies {
-                implementation(libs.socketioParser)
+                api(libs.socket.io.parser)
                 api(libs.ktor.client.core)
                 api(libs.ktor.client.logging)
                 api(libs.ktor.client.websockets)
+
                 implementation(libs.atomicfu)
             }
         }
@@ -99,7 +100,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        minSdk = 26
+        minSdk = 23
     }
 
     compileOptions {

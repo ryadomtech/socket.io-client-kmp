@@ -28,6 +28,42 @@ import io.ktor.util.date.GMTDate
 import kotlin.math.floor
 import kotlin.random.Random
 
+/**
+ * Implements an exponential backoff strategy, useful for retrying operations with increasing delays.
+ * This helps to prevent overwhelming a service that may be temporarily unavailable.
+ *
+ * The delay duration is calculated based on the number of attempts, a factor, and an optional jitter
+ * to randomize the delay slightly and avoid synchronized retries from multiple clients (thundering herd problem).
+ *
+ * Example usage:
+ * ```kotlin
+ * val backoff = Backoff(initialMin = 100, initialMax = 5000, initialFactor = 2, initialJitter = 0.5)
+ *
+ * suspend fun performActionWithRetry() {
+ *     while (true) {
+ *         try {
+ *             // attempt the operation
+ *             println("Performing action...")
+ *             // simulate a failure
+ *             throw IOException("Service unavailable")
+ *         } catch (e: IOException) {
+ *             val delay = backoff.duration()
+ *             if (delay >= backoff.max) {
+ *                 println("Max retries reached. Aborting.")
+ *                 backoff.reset() // Reset for next time
+ *                 break
+ *             }
+ *             println("Action failed. Retrying in $delay ms...")
+ *             delay(delay)
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * @property initialMin The initial and minimum backoff duration in milliseconds. Defaults to 100ms.
+ * @property initialMax The maximum backoff duration in milliseconds. The calculated duration will be capped at this value. Defaults to 10000ms.
+ * @property initialFactor The multiplication factor for each subsequent attempt. A factor of 2 means the delay doubles each time. Must be >= 1. Defaults to 2.
+ */
 internal class Backoff(
     initialMin: Long = 100,
     initialMax: Long = 10000,

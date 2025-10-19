@@ -25,33 +25,34 @@
 package tech.ryadom.kio.util
 
 /**
- * Interface for logging messages within the Kio library.
- * This interface provides a flexible way to integrate with different logging frameworks.
- *
- * Implement this interface to customize how log messages are handled.
- * By default, no logging is performed unless a concrete implementation is provided.
- *
- * The `debug`, `info`, `warn`, and `error` functions are convenience methods
- * that delegate to the `log` function with the appropriate [LogLevel].
- *
- * The `message` parameter in the logging functions is a lambda (`() -> String`)
- * to allow for lazy evaluation of the log message. This can improve performance
- * if the message construction is expensive and the log level is not enabled.
+ * A simple logging facade for kio.
  */
 fun interface KioLogger {
 
+    /**
+     * Logs a debug message.
+     */
     fun debug(message: () -> String) {
         log(level = LogLevel.DEBUG, message = message(), cause = null)
     }
 
+    /**
+     * Logs an info message.
+     */
     fun info(message: () -> String) {
         log(level = LogLevel.INFO, message = message(), cause = null)
     }
 
+    /**
+     * Logs a warning message.
+     */
     fun warn(cause: Throwable? = null, message: () -> String) {
         log(level = LogLevel.WARN, message = message(), cause = cause)
     }
 
+    /**
+     * Logs an error message.
+     */
     fun error(cause: Throwable? = null, message: () -> String) {
         log(level = LogLevel.ERROR, message = message(), cause = cause)
     }
@@ -60,8 +61,31 @@ fun interface KioLogger {
 
 }
 
+/**
+ * The log level.
+ *
+ * @property priority the priority of the log level, the higher the more important.
+ */
 enum class LogLevel(val priority: Int) {
-    DEBUG(0), INFO(1), WARN(2), ERROR(3);
+    /**
+     * Debug log level.
+     */
+    DEBUG(0),
+
+    /**
+     * Info log level.
+     */
+    INFO(1),
+
+    /**
+     * Warn log level.
+     */
+    WARN(2),
+
+    /**
+     * Error log level.
+     */
+    ERROR(3);
 
     fun isGreaterOrEqualsThan(level: LogLevel): Boolean {
         return priority >= level.priority

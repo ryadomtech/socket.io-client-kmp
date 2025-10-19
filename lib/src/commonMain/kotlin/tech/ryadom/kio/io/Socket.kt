@@ -20,7 +20,7 @@
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
- */
+*/
 
 package tech.ryadom.kio.io
 
@@ -83,8 +83,6 @@ class Socket(
     private val recvBuffer = arrayListOf<ArrayList<Any>>()
     private var reconstructor: BinaryPacketReconstructor? = null
 
-    private val onAnyIncomingListeners = arrayListOf<Listener>()
-
     private var sessionId = ""
 
     fun open() {
@@ -116,20 +114,8 @@ class Socket(
         }
     }
 
-    fun send(vararg args: Any): Socket {
-        return emit(EVENT_MESSAGE, *args) as Socket
-    }
-
-    fun onAnyIncoming(listener: Listener) {
-        onAnyIncomingListeners.add(listener)
-    }
-
-    fun offAnyIncoming() {
-        onAnyIncomingListeners.clear()
-    }
-
-    fun offAnyIncoming(fn: Listener) {
-        onAnyIncomingListeners.remove(fn)
+    fun send(event: String, vararg args: Any): Socket {
+        return emit(event, *args) as Socket
     }
 
     override fun emit(event: String, vararg args: Any): Emitter {
@@ -139,10 +125,15 @@ class Socket(
         }
 
         lpScope.launch {
+            logger.info { "ready for emit" }
             if (args.isNotEmpty() && args.last() is Ack) {
+
+                logger.info { "?" }
                 val arr = Array(args.size - 1) { args[it] }
                 emitWithAck(event, arr, args.last() as Ack)
             } else {
+
+                logger.info { "??" }
                 emitWithAck(event, args, null)
             }
         }
@@ -414,10 +405,6 @@ class Socket(
             }
         }
 
-        onAnyIncomingListeners.forEach {
-            it.call(args)
-        }
-
         super.emit(ev, *args)
     }
 
@@ -467,7 +454,7 @@ class Socket(
 
             fn.call(*args)
         } else {
-            // Logging.info(TAG, "bad ack $ackId")
+            logger.info { "bad ack $ackId" }
         }
     }
 
@@ -514,7 +501,6 @@ class Socket(
 
         const val EVENT_CONNECT_ERROR = "connect_error"
 
-        const val EVENT_MESSAGE = "message"
         const val EVENT_ERROR = SocketManager.EVENT_ERROR
 
         private val RESERVED_EVENTS = setOf(
