@@ -275,6 +275,8 @@ internal class Engine(
     private fun onPacket(packet: EngineIOPacket<*>) {
         if (inactive()) return
 
+        logger.info { "[Engine] Packet $packet" }
+
         emit(EVENT_PACKET, packet)
         emit(EVENT_HEARTBEAT)
 
@@ -288,11 +290,13 @@ internal class Engine(
     }
 
     private fun handlePingPacket() {
+        logger.info { "[Engine] Ping packet" }
         emit(EVENT_PING)
         sendPackets(listOf(EngineIOPacket.Pong(null)))
     }
 
     private fun onHandshake(pkt: EngineIOPacket.Open) {
+        logger.info { "[Engine] On handshake" }
         sessionId = pkt.sid
         transport?.options?.query?.set(SID, sessionId)
         upgrades = filterUpgrades(pkt.upgrades)

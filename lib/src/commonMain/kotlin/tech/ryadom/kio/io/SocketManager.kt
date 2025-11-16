@@ -145,7 +145,7 @@ class SocketManager(
     }
 
     fun open(callback: ((String) -> Unit)? = null) {
-        logger.info { "Opening" }
+        logger.info { "[SocketManager] Opening..." }
         if (state != State.INIT && state != State.CLOSED) {
             return
         }
@@ -176,6 +176,7 @@ class SocketManager(
             onOpenEvent.destroy()
             socket.close()
             socket.emit(Engine.EVENT_ERROR, "timeout")
+            logger.warn { "[SocketManager] Timeout" }
         }
 
         if (options.timeout == Duration.ZERO) {
@@ -204,6 +205,7 @@ class SocketManager(
         state = State.CLOSED
         engine?.close()
         engine = null
+        logger.warn { "[SocketManager] Closed" }
     }
 
     private fun onOpen() {

@@ -1,11 +1,11 @@
 [versions]
 activity-compose = "1.11.0"
-agp = "8.13.0"
+agp = "8.13.1"
 atomicfu = "0.29.0"
-kotlin = "2.2.20"
-publishing = "0.34.0"
-ktor = "3.3.1"
-compose-multiplatform = "1.9.0"
+kotlin = "2.2.21"
+publishing = "0.35.0"
+ktor = "3.3.2"
+compose-multiplatform = "1.9.3"
 logging = "2.1.0"
 socket-io-parser = "2.6.0"
 

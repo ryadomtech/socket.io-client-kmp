@@ -125,6 +125,7 @@ internal open class WebSocket(
     }
 
     private fun onWsText(data: String) = lpScope.launch {
+        logger.warn { "[WebSocket] On WS text" }
         val packet = try {
             if (rawMessage) EngineIO.decodeWsFrame(data) { it }
             else EngineIO.decodeSocketIO(data)
@@ -138,6 +139,7 @@ internal open class WebSocket(
 
     @OptIn(UnsafeByteStringApi::class)
     private fun onWsBinary(data: ByteArray) = lpScope.launch {
+        logger.warn { "[WebSocket] On WS binary" }
         onPacket(
             EngineIO.decodeWsFrame(
                 UnsafeByteStringOperations.wrapUnsafe(data)

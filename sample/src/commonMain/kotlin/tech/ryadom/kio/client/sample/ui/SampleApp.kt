@@ -80,6 +80,7 @@ fun SampleApp() {
 
         LazyColumn(
             modifier = Modifier.fillMaxSize()
+                .padding(paddingValues)
         ) {
             items(events) { event -> Text(text = event) }
         }

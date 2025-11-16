@@ -28,8 +28,8 @@ import tech.ryadom.kio.io.Backoff
 import kotlin.math.pow
 import kotlin.test.DefaultAsserter.assertTrue
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
 
 class BackoffTest {
 
@@ -37,14 +37,14 @@ class BackoffTest {
     fun durationShouldIncreaseTheBackoff() {
         val b = Backoff()
 
-        assertTrue(100L == b.duration())
-        assertTrue(200L == b.duration())
-        assertTrue(400L == b.duration())
-        assertTrue(800L == b.duration())
+        assertEquals(100L, b.duration())
+        assertEquals(200L, b.duration())
+        assertEquals(400L, b.duration())
+        assertEquals(800L, b.duration())
 
         b.reset()
-        assertTrue(100L == b.duration())
-        assertTrue(200L == b.duration())
+        assertEquals(100L, b.duration())
+        assertEquals(200L, b.duration())
     }
 
     @Test
@@ -66,7 +66,7 @@ class BackoffTest {
 
                 assertTrue(
                     "$min <= $duration < $max",
-                    duration >= min && duration < max
+                    duration in min..<max
                 )
             }
         }

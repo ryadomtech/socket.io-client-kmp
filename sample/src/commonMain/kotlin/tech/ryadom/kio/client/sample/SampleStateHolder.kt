@@ -53,4 +53,4 @@ This URL is taken from an [open source](https://github.com/socketio/chat-example
 
 Ryadom Tech is **not** responsible for any information received from this resource or for its functionality.
  */
-private const val DemoUrl = "https://5q4g9q-3000.csb.app"
+private const val DemoUrl = "https://stage-socket.technary.net"

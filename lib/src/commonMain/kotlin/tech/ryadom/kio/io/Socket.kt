@@ -87,7 +87,7 @@ class Socket(
 
     fun open() {
         lpScope.launch {
-            logger.info { "open: connected $connected, io reconnecting ${manager.isReconnecting}" }
+            logger.info { "Open: connected $connected, io reconnecting ${manager.isReconnecting}" }
             if (connected || manager.isReconnecting) {
                 return@launch
             }
@@ -288,6 +288,7 @@ class Socket(
     }
 
     private fun onOpen() {
+        logger.info { "[Socket] On open" }
         val auth = Json.encodeToJsonElement(auth)
             .takeIf { auth.isNotEmpty() } as? JsonObject
 
