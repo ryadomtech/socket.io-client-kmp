@@ -25,9 +25,6 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Build
-        run: ./gradlew build
-
       - name: Run tests
         run: ./gradlew allTests
 
