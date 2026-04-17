@@ -25,14 +25,13 @@ In your shared module's build.gradle.kts add:
 
 ```Gradle Kotlin DSL
 kotlin.sourceSets.commonMain.dependencies {
-  implementation("tech.ryadom:kio:0.0.5")
+  implementation("tech.ryadom:kio:0.0.4")
 }
 ```
 
-### Usage
+### Creation
 ```Kotlin
 val socket: Socket = kioSocket("https://yourdomain.com") {
-    
     // Configure min. log level or set custom logger
     logging {
         level = LogLevel.INFO
@@ -45,9 +44,34 @@ val socket: Socket = kioSocket("https://yourdomain.com") {
     }
 }
 
-socket.on("event") {} // For specific event
-socket.once("event") {} // Once for specific event
-socket.onAny {} // For any events
+socket.open()
+```
+
+### Listening
+```Kotlin
+// For specific event
+socket.on("connect") {
+}
+
+// Once for specific event
+socket.once("event") {
+}
+
+// For any events
+socket.onAny {
+}
+```
+
+### Sending
+```Kotlin
+val args = // create your packet
+socket.emit("event", args)
+
+// WARN: Do not send json like this. It will be string like this '{}'
+socket.emit("event", Json.encodeToString(args))
+
+// Do like that:
+socket.emit("event", Json.encodeToJsonEvent(args))
 ```
 
 ### Support
