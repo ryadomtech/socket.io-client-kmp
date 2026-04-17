@@ -255,7 +255,7 @@ internal class Engine(
     }
 
     private fun onDrain(processedCount: Int) {
-        repeat(processedCount) { writeBuffer.removeFirst() }
+        repeat(processedCount) { writeBuffer.removeAt(0) }
         prevBufferLen -= processedCount
 
         when {

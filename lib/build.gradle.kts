@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.publishing)
 }
 
-private val rootVersion = "0.0.5"
+private val rootVersion = "0.0.6"
 
 kotlin {
     jvm()

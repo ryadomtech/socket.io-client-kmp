@@ -389,7 +389,7 @@ class Socket(
     }
 
     private fun fireEvent(data: ArrayList<Any>) {
-        val ev = when (val event = data.removeFirst()) {
+        val ev = when (val event = data.removeAt(0)) {
             is String -> event
             is JsonPrimitive -> event.content
             else -> {
