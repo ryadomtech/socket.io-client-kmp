@@ -25,8 +25,10 @@
 package tech.ryadom.kio
 
 import io.ktor.http.Url
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import tech.ryadom.kio.dsl.KioDsl
 import tech.ryadom.kio.engine.DefaultHttpClientFactory
 import tech.ryadom.kio.engine.HttpClientFactory
@@ -95,10 +97,13 @@ class SocketConfig {
 }
 
 /**
- * Race-free IO scope
+ * Race-free IO scope.
+ *
+ * Uses a [SupervisorJob] together with a [CoroutineExceptionHandler] so that a single failing
+ * task cannot cancel the scope and take every other socket in the process down with it.
  */
 internal val lpScope = CoroutineScope(
-    Dispatchers.Default.limitedParallelism(1)
+    SupervisorJob() + Dispatchers.Default.limitedParallelism(1)
 )
 
 private val socketManagers = mutableMapOf<String, SocketManager>()
@@ -166,14 +171,11 @@ fun kioSocket(uri: String, f: SocketConfig.() -> Unit): Socket {
             (existingManager?.namespaceSockets?.containsKey(namespacePath) == true)
 
     val manager = if (shouldCreateNewConnection) {
-        // If forceNew is true, or multiplex is false, or the namespace already exists for an existing manager,
-        // create a new SocketManager instance.
-
-        SocketManager(uri, logger, options, factory).also {
-            // If not multiplexing or forcing new, we might be replacing an old manager for this id
-            // or creating a new one if it's a completely new connection.
-            if (options.forceNew || !options.multiplex) socketManagers[id] = it
-        }
+        // If forceNew is true, or multiplex is false, or the namespace already exists for an
+        // existing manager, create a standalone SocketManager instance. It is deliberately kept
+        // out of the cache: a connection that was asked to be separate must not become the one
+        // every later multiplexed socket attaches to.
+        SocketManager(uri, logger, options, factory)
     } else {
         // Otherwise, reuse an existing manager or create a new one if it doesn't exist for this id.
         existingManager ?: SocketManager(

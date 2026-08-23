@@ -43,8 +43,8 @@ import kotlin.time.Duration.Companion.seconds
  *
  * @property isReconnection Whether to enable reconnection. Default is `true`.
  * @property reconnectionAttempts The maximum number of reconnection attempts. Default is `Int.MAX_VALUE`.
- * @property reconnectionDelay The initial delay before attempting to reconnect. Default is `1.seconds`.
- * @property reconnectionDelayMax The maximum delay between reconnection attempts. Default is `5.seconds`.
+ * @property reconnectionDelay The initial delay before attempting to reconnect. Default is `5.seconds`.
+ * @property reconnectionDelayMax The maximum delay between reconnection attempts. Default is `10.seconds`.
  * @property randomizationFactor A factor to randomize the reconnection delay. Default is `0.5`.
  * @property auth A map of authentication data to be sent with the connection request. Default is an empty map.
  * @property timeout The connection timeout duration. Default is `20.seconds`.
@@ -164,12 +164,23 @@ class SocketManager(
             callback?.invoke("")
         }
 
-        val onErrorEvent = On.on(socket, Engine.EVENT_ERROR) {
+        val onFailure = { reason: String ->
             clearEventHandles()
             state = State.CLOSED
-            emit(EVENT_ERROR, *it)
+            emit(EVENT_ERROR, reason)
 
-            callback?.invoke("Connection error") ?: maybeReconnectOnOpen()
+            callback?.invoke(reason) ?: maybeReconnectOnOpen()
+        }
+
+        val onErrorEvent = On.on(socket, Engine.EVENT_ERROR) {
+            onFailure(it.firstOrNull() as? String ?: "Connection error")
+        }
+
+        // The engine may also close while still opening, for instance when the transport drops
+        // during the handshake. Without this the caller - the reconnection loop in particular -
+        // would wait for a callback that never comes.
+        val onCloseEvent = On.on(socket, Engine.EVENT_CLOSE) {
+            onFailure(it.firstOrNull() as? String ?: "Connection closed")
         }
 
         val onTimeout = {
@@ -193,6 +204,7 @@ class SocketManager(
 
         eventHandles.add(onOpenEvent)
         eventHandles.add(onErrorEvent)
+        eventHandles.add(onCloseEvent)
 
         socket.open()
     }
@@ -205,7 +217,7 @@ class SocketManager(
         state = State.CLOSED
         engine?.close()
         engine = null
-        logger.warn { "[SocketManager] Closed" }
+        logger.info { "[SocketManager] Closed" }
     }
 
     private fun onOpen() {
@@ -302,7 +314,9 @@ class SocketManager(
                 open {
                     isReconnecting = false
                     if (it.isEmpty()) {
-                        emit(EVENT_RECONNECT, options.backoff.reset())
+                        val attempts = options.backoff.attempts
+                        options.backoff.reset()
+                        emit(EVENT_RECONNECT, attempts)
                     } else {
                         reconnect()
                         emit(EVENT_RECONNECT_ERROR, it)

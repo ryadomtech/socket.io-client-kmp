@@ -44,8 +44,15 @@ internal class BinaryPacketReconstructor(
     private val packet: SocketIOPacket.BinaryMessage,
     private val emitter: (isAck: Boolean, ackId: Int?, ArrayList<Any>) -> Unit,
 ) {
-    private val buffers = ArrayList<ByteString>()
-    private var currentAttachmentIndex = 0
+    private val buffers = ArrayList<ByteString>(
+        packet.nBinaryAttachments.coerceAtLeast(0)
+    )
+
+    /**
+     * Whether every expected attachment has been received.
+     */
+    val isComplete: Boolean
+        get() = buffers.size >= packet.nBinaryAttachments
 
     /**
      * Adds a binary attachment to the packet.
@@ -56,24 +63,41 @@ internal class BinaryPacketReconstructor(
      * @param buffer The [ByteString] representing the binary attachment.
      */
     fun add(buffer: ByteString) {
-        if (buffers.size < packet.nBinaryAttachments) {
-            buffers.ensureCapacity(packet.nBinaryAttachments)
+        if (isComplete) {
+            return
         }
 
-        buffers.add(currentAttachmentIndex++, buffer)
+        buffers.add(buffer)
 
-        if (currentAttachmentIndex == packet.nBinaryAttachments) {
-            val data = ArrayList<Any>(packet.payload.size)
-            packet.payload.forEach { element ->
-                when (element) {
-                    is PayloadElement.AttachmentRef -> {
-                        data.add(buffers[element.attachmentIndex])
-                    }
+        if (isComplete) {
+            reconstruct()
+        }
+    }
 
-                    is PayloadElement.Json -> data.add(element.jsonElement)
+    /**
+     * Emits the packet right away when it expects no attachment at all.
+     *
+     * Without it such a packet would never be completed by [add] and would block every following
+     * binary packet on the same socket.
+     */
+    fun emitIfComplete() {
+        if (isComplete) {
+            reconstruct()
+        }
+    }
+
+    private fun reconstruct() {
+        val data = ArrayList<Any>(packet.payload.size)
+        packet.payload.forEach { element ->
+            when (element) {
+                is PayloadElement.AttachmentRef -> {
+                    buffers.getOrNull(element.attachmentIndex)?.let(data::add)
                 }
+
+                is PayloadElement.Json -> data.add(element.jsonElement)
             }
-            emitter(packet is SocketIOPacket.BinaryAck, packet.ackId, data)
         }
+
+        emitter(packet is SocketIOPacket.BinaryAck, packet.ackId, data)
     }
 }

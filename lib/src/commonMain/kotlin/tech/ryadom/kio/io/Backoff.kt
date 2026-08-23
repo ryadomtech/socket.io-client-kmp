@@ -73,24 +73,24 @@ internal class Backoff(
 
     private val random = Random(GMTDate().timestamp)
 
-    var min: Long = initialMin
+    var min: Long = initialMin.coerceAtLeast(0)
         set(value) {
             field = value.coerceAtLeast(0)
         }
 
-    var max: Long = initialMax
+    var max: Long = initialMax.coerceAtLeast(initialMin.coerceAtLeast(0))
         set(value) {
             field = value.coerceAtLeast(min)
         }
 
-    var factor: Int = initialFactor
+    var factor: Int = initialFactor.coerceAtLeast(1)
         set(value) {
             field = value.coerceAtLeast(1)
         }
 
-    var jitter: Double = initialJitter
+    var jitter: Double = initialJitter.also { requireValidJitter(it) }
         set(value) {
-            require(value in 0.0..<1.0) { "jitter must be between 0 and 1" }
+            requireValidJitter(value)
             field = value
         }
 
@@ -98,13 +98,18 @@ internal class Backoff(
         private set
 
     fun duration(): Long {
-        var base = min.toDouble()
+        val upperBound = maxOf(min, max)
 
-        repeat(attempts) {
+        var base = min.toDouble()
+        var attempt = 0
+        while (attempt < attempts && base < Overflowless) {
             base *= factor
+            attempt++
         }
 
-        this.attempts++
+        if (attempts < Int.MAX_VALUE) {
+            this.attempts++
+        }
 
         if (jitter != 0.0) {
             val rand = random.nextDouble()
@@ -117,10 +122,22 @@ internal class Backoff(
             }
         }
 
-        return base.coerceIn(min.toDouble(), max.toDouble()).toLong()
+        return base.coerceIn(min.toDouble(), upperBound.toDouble()).toLong()
     }
 
     fun reset() {
         attempts = 0
     }
 }
+
+private fun requireValidJitter(value: Double) {
+    require(value in 0.0..<1.0) { "jitter must be between 0 and 1" }
+}
+
+/**
+ * The largest base the exponential growth is allowed to reach.
+ *
+ * Beyond this point further multiplications only risk a `Double` overflow, while the result is
+ * capped by [Backoff.max] anyway.
+ */
+private const val Overflowless = 9.2e18

@@ -29,14 +29,23 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-internal fun interface Ack {
+/**
+ * A callback invoked with the acknowledgement arguments sent back by the peer.
+ *
+ * Pass an instance as the last argument of [Socket.emit] to request an acknowledgement from the
+ * server. When the server requests one, the [Ack] to answer with is appended as the last argument
+ * of the received event.
+ */
+fun interface Ack {
     fun call(vararg args: Any)
 }
 
 /**
  * Represents an acknowledgment (ack) that can time out.
+ *
+ * @property timeout how long, in milliseconds, to wait for the peer before giving up.
  */
-internal abstract class AckWithTimeout(val timeout: Long) : Ack {
+abstract class AckWithTimeout(val timeout: Long) : Ack {
     private var job: Job? = null
 
     override fun call(vararg args: Any) {

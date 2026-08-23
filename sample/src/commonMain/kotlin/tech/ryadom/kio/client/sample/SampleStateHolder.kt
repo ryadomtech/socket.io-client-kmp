@@ -17,10 +17,6 @@ class SampleStateHolder {
 
     private val socket by lazy {
         kioSocket(DemoUrl) {
-            options {
-                isSecure = true
-            }
-
             logging {
                 logLevel(LogLevel.INFO)
             }

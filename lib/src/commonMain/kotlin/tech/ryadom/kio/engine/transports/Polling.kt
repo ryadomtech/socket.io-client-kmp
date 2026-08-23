@@ -30,7 +30,6 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
-import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.http.withCharset
 import io.ktor.util.toMap
@@ -113,14 +112,14 @@ internal open class Polling(
         return mutableMapOf<String, List<String>>().apply {
             putAll(options.extraHeaders)
             if (method == HttpMethod.Post) {
+                // The protocol mandates text/plain for long-polling bodies. Note that
+                // ContentType.contentType would only yield the type half, "text".
                 this[HttpHeaders.ContentType] = listOf(
-                    ContentType.Text.Plain.withCharset(
-                        Charsets.UTF_8
-                    )
-                ).map { it.contentType }
+                    ContentType.Text.Plain.withCharset(Charsets.UTF_8).toString()
+                )
             }
 
-            this[HttpHeaders.Accept] = listOf(ContentType.Any.contentType)
+            this[HttpHeaders.Accept] = listOf(ContentType.Any.toString())
             emit(EVENT_REQUEST_HEADERS, this)
         }
     }
@@ -137,7 +136,6 @@ internal open class Polling(
             httpClientFactory.httpRequest(uri) {
                 this.method = method
                 headers { putHeaders(this, requestHeaders) }
-                contentType(ContentType.Application.Json)
                 data?.let { setBody(it) }
             }
         } catch (e: Exception) {
@@ -171,12 +169,12 @@ internal open class Polling(
             return
         }
 
-        packets.forEach { pkt ->
+        for (pkt in packets) {
             when {
                 (state == State.OPENING || state == State.CLOSING) && pkt is EngineIOPacket.Open -> onOpen()
                 pkt is EngineIOPacket.Close -> {
                     onClose()
-                    return@forEach
+                    break
                 }
 
                 else -> onPacket(pkt)

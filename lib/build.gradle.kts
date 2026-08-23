@@ -6,9 +6,10 @@ plugins {
     alias(libs.plugins.publishing)
 }
 
-private val rootVersion = "0.0.6"
+private val rootVersion = "1.0.0"
 
 kotlin {
+    jvmToolchain(21)
     jvm()
 
     iosArm64()
@@ -90,6 +91,7 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
             }
         }
     }
@@ -97,15 +99,10 @@ kotlin {
 
 android {
     namespace = "tech.ryadom.kio"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 23
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 

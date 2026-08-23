@@ -35,12 +35,9 @@ internal object UriUtils {
     /**
      * Encodes a string for use in a URI.
      *
-     * This function iterates through the input string, character by character.
-     * If a character is considered "safe" (alphanumeric or one of `-_.!~*'()`),
-     * it is appended to the result as is.
-     * Otherwise, the character is percent-encoded. This means it's converted
-     * to its UTF-8 byte representation, and each byte is then represented
-     * as a '%' character followed by two hexadecimal digits.
+     * The input is converted to its UTF-8 byte representation, then every byte that does not
+     * stand for a "safe" character (alphanumeric or one of `-_.!~*'()`) is percent-encoded, that
+     * is written as a '%' character followed by two hexadecimal digits.
      *
      * For example, the space character ' ' would be encoded as "%20".
      *
@@ -48,16 +45,16 @@ internal object UriUtils {
      * @return The URI-encoded string.
      */
     fun encode(str: String): String = buildString {
-        for (char in str) {
-            if (char in SafeChars) {
+        // Encoding the whole string at once keeps surrogate pairs together. Encoding char by char
+        // would turn every half of an astral character, an emoji for instance, into '?'.
+        str.encodeToByteArray().forEach { byte ->
+            val char = byte.toInt().toChar()
+            if (byte >= 0 && char in SafeChars) {
                 append(char)
             } else {
-                char.toString().encodeToByteArray()
-                    .forEach { byte ->
-                        append('%')
-                        append(HexDigits[(byte.toInt() shr 4) and 0x0F])
-                        append(HexDigits[byte.toInt() and 0x0F])
-                    }
+                append('%')
+                append(HexDigits[(byte.toInt() shr 4) and 0x0F])
+                append(HexDigits[byte.toInt() and 0x0F])
             }
         }
     }
@@ -82,46 +79,34 @@ internal object UriUtils {
         var i = 0
 
         while (i < str.length) {
-            when (val c = str[i]) {
+            when (str[i]) {
                 '%' -> {
-                    require(i + 2 < str.length) { "Invalid % encoding at position $i" }
+                    val bytes = ArrayList<Byte>()
+                    while (i < str.length && str[i] == '%') {
+                        require(i + 2 < str.length) { "Invalid % encoding at position $i" }
 
-                    val byte = str.substring(i + 1, i + 3)
-                        .toInt(16)
-                        .toByte()
+                        val byte = str.substring(i + 1, i + 3).toIntOrNull(16)
+                        require(byte != null) { "Invalid % encoding at position $i" }
 
-                    if (byte < 0) {
-                        val bytes = arrayListOf<Byte>()
-                        bytes.add(byte)
-
-                        while (i + 3 < str.length && str[i + 3] == '%') {
-                            i += 3
-
-                            val nextByte = str.substring(i + 1, i + 3)
-                                .toInt(16)
-                                .toByte()
-
-                            bytes.add(nextByte)
-                        }
-
-                        result.append(
-                            bytes.toByteArray().toString()
-                        )
-                    } else {
-                        result.append(
-                            byte.toInt().toChar()
-                        )
+                        bytes.add(byte.toByte())
+                        i += 3
                     }
 
-                    i += 2
+                    result.append(
+                        bytes.toByteArray().decodeToString()
+                    )
                 }
 
-                '+' -> result.append(' ')
+                '+' -> {
+                    result.append(' ')
+                    i++
+                }
 
-                else -> result.append(c)
+                else -> {
+                    result.append(str[i])
+                    i++
+                }
             }
-
-            i++
         }
 
         return result.toString()

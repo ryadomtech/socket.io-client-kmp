@@ -123,25 +123,24 @@ open class Emitter {
     }
 
     open fun emit(event: String, vararg args: Any): Emitter = apply {
-        val (callbacks, onceCallbacks) = threadSafeState.value.let {
-            Pair(
-                first = it.callbacks[event].orEmpty() + it.onAnyCallbacks,
-                second = it.onceCallbacks[event].orEmpty()
-            )
-        }
+        var callbacks = listOf<Listener>()
+        var onceCallbacks = listOf<Listener>()
 
-        if (callbacks.isNotEmpty() || onceCallbacks.isNotEmpty()) {
-            // Execute regular callbacks
-            callbacks.forEach { it.call(*args) }
+        // Take the snapshot and drop the once listeners in a single atomic step, so that
+        // listeners registered while this emit is running are neither called nor discarded.
+        updateState { current ->
+            callbacks = current.callbacks[event].orEmpty() + current.onAnyCallbacks
+            onceCallbacks = current.onceCallbacks[event].orEmpty()
 
-            // Execute once callbacks
-            onceCallbacks.forEach { it.call(*args) }
-
-            // Remove once callbacks
-            updateState { current ->
+            if (onceCallbacks.isEmpty()) {
+                current
+            } else {
                 current.copy(onceCallbacks = current.onceCallbacks - event)
             }
         }
+
+        callbacks.forEach { it.call(*args) }
+        onceCallbacks.forEach { it.call(*args) }
     }
 
     fun listeners(event: String): List<Listener> {

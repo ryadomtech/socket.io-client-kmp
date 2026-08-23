@@ -1,8 +1,6 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
-import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     id("com.android.application")
@@ -13,6 +11,7 @@ plugins {
 }
 
 kotlin {
+    jvmToolchain(21)
     androidTarget()
 
     listOf(
@@ -73,12 +72,12 @@ kotlin {
 
 android {
     namespace = "tech.ryadom.kio.sample"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "tech.ryadom.kio.sample"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
     }
@@ -118,13 +117,4 @@ afterEvaluate {
 
         named("wasmJsBrowserProductionWebpack").configure(configureJs)
     }
-}
-
-tasks.withType<JavaCompile>().configureEach {
-    sourceCompatibility = JavaVersion.VERSION_11.toString()
-    targetCompatibility = JavaVersion.VERSION_11.toString()
-}
-
-tasks.withType<KotlinJvmCompile>().configureEach {
-    compilerOptions.jvmTarget = JvmTarget.JVM_11
 }

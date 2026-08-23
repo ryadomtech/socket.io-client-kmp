@@ -35,9 +35,7 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.floatOrNull
 import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import org.hildan.socketio.EngineIOPacket
 import org.hildan.socketio.PayloadElement
@@ -87,13 +85,17 @@ class Socket(
 
     fun open() {
         lpScope.launch {
-            logger.info { "Open: connected $connected, io reconnecting ${manager.isReconnecting}" }
-            if (connected || manager.isReconnecting) {
+            logger.debug { "Open: connected $connected, io reconnecting ${manager.isReconnecting}" }
+            if (connected) {
                 return@launch
             }
 
             subEvents()
-            manager.open()
+
+            if (!manager.isReconnecting) {
+                manager.open()
+            }
+
             if (manager.state == State.OPEN) {
                 onOpen()
             }
@@ -125,15 +127,10 @@ class Socket(
         }
 
         lpScope.launch {
-            logger.info { "ready for emit" }
             if (args.isNotEmpty() && args.last() is Ack) {
-
-                logger.info { "?" }
                 val arr = Array(args.size - 1) { args[it] }
                 emitWithAck(event, arr, args.last() as Ack)
             } else {
-
-                logger.info { "??" }
                 emitWithAck(event, args, null)
             }
         }
@@ -288,7 +285,7 @@ class Socket(
     }
 
     private fun onOpen() {
-        logger.info { "[Socket] On open" }
+        logger.debug { "[Socket] On open" }
         val auth = Json.encodeToJsonElement(auth)
             .takeIf { auth.isNotEmpty() } as? JsonObject
 
@@ -306,7 +303,7 @@ class Socket(
             return
         }
 
-        logger.error { "on packet $packet" }
+        logger.debug { "On packet $packet" }
 
         when (packet) {
             is SocketIOPacket.Connect -> {
@@ -329,20 +326,25 @@ class Socket(
             }
 
             is SocketIOPacket.Ack -> onAck(packet.ackId, ArrayList(packet.payload))
-            is SocketIOPacket.BinaryEvent,
-            is SocketIOPacket.BinaryAck -> {
+            is SocketIOPacket.BinaryMessage -> {
                 if (reconstructor != null) {
                     onError("Receive binary event/ack while reconstructing binary packet, $packet")
+                    reconstructor = null
                 }
 
-                reconstructor = BinaryPacketReconstructor(packet) { isAck, ackId, data ->
-                    if (isAck) {
-                        onAck(ackId!!, data)
-                    } else {
-                        onEvent(ackId, data)
-                    }
-
+                BinaryPacketReconstructor(packet) { isAck, ackId, data ->
                     reconstructor = null
+
+                    when {
+                        !isAck -> onEvent(ackId, data)
+                        ackId != null -> onAck(ackId, data)
+                        else -> onError("Binary ack without ack id, $packet")
+                    }
+                }.also {
+                    reconstructor = it
+                    // A binary packet declaring no attachment is complete on arrival, and would
+                    // otherwise stay pending forever and block every following binary packet.
+                    it.emitIfComplete()
                 }
             }
         }
@@ -476,6 +478,8 @@ class Socket(
     private fun clearAck() {
         ack.values.forEach {
             if (it is AckWithTimeout) {
+                // Cancel first, otherwise the scheduled job reports the timeout a second time
+                it.cancel()
                 it.onTimeout()
             }
             // note: basic Ack objects have no way to report an error,
@@ -485,14 +489,6 @@ class Socket(
     }
 
     internal fun active() = eventHandlers.isNotEmpty()
-
-    private fun toJson(primitive: Any) = when (primitive) {
-        is String -> JsonPrimitive(primitive)
-        is Boolean -> JsonPrimitive(primitive)
-        is Number -> JsonPrimitive(primitive)
-        is JsonElement -> primitive
-        else -> JsonPrimitive(primitive.toString())
-    }
 
     companion object {
 
@@ -516,41 +512,43 @@ class Socket(
     }
 }
 
-private fun JsonElement.flatPrimitive(): Any {
-    return when (this) {
-        is JsonPrimitive -> {
-            return when {
-                isString -> content
-                this is JsonNull -> "null"
-                else -> {
-                    val boolVal = jsonPrimitive.booleanOrNull
-                    if (boolVal != null) {
-                        return boolVal
-                    }
-                    val intVal = jsonPrimitive.intOrNull
-                    if (intVal != null) {
-                        return intVal
-                    }
-                    val longVal = jsonPrimitive.longOrNull
-                    if (longVal != null) {
-                        return longVal
-                    }
-                    val floatVal = jsonPrimitive.floatOrNull
-                    if (floatVal != null) {
-                        return floatVal
-                    }
-                    val doubleVal = jsonPrimitive.doubleOrNull
-                    if (doubleVal != null) {
-                        return doubleVal
-                    }
+/**
+ * Wraps an arbitrary emitted argument into a [JsonElement].
+ *
+ * [JsonElement] values are passed through untouched, so callers willing to send structured data
+ * should serialize it themselves, e.g. with `Json.encodeToJsonElement(value)`. Anything that is
+ * neither a primitive nor a [JsonElement] falls back to its `toString()` representation.
+ */
+internal fun toJson(primitive: Any): JsonElement = when (primitive) {
+    is JsonElement -> primitive
+    is String -> JsonPrimitive(primitive)
+    is Boolean -> JsonPrimitive(primitive)
+    is Number -> JsonPrimitive(primitive)
+    else -> JsonPrimitive(primitive.toString())
+}
 
-                    return 0
-                }
-            }
-        }
-
-        else -> this
+/**
+ * Unwraps a JSON primitive into the closest Kotlin value.
+ *
+ * Strings, booleans and integral numbers map to [String], [Boolean], [Int] or [Long].
+ * Every other number maps to [Double], so that the precision of the wire value is preserved.
+ * Anything that is not a primitive - objects, arrays and `null` - is returned untouched.
+ */
+internal fun JsonElement.flatPrimitive(): Any {
+    if (this !is JsonPrimitive || this is JsonNull) {
+        return this
     }
+
+    if (isString) {
+        return content
+    }
+
+    booleanOrNull?.let { return it }
+    intOrNull?.let { return it }
+    longOrNull?.let { return it }
+    doubleOrNull?.let { return it }
+
+    return content
 }
 
 private fun <T> Array<T>.hasBinary(): Boolean {
