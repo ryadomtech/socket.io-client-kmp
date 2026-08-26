@@ -27,6 +27,7 @@ package tech.ryadom.kio.engine.transports
 import io.ktor.util.date.GMTDate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.hildan.socketio.EngineIOPacket
 import tech.ryadom.kio.engine.State
 import tech.ryadom.kio.util.Emitter
@@ -63,9 +64,14 @@ internal abstract class Transport(
 ) : Emitter() {
 
     /**
-     * Default IO scope
+     * Default IO scope.
+     *
+     * Supervised so that a failing request does not cancel the scope and leave the transport
+     * unable to issue any further one.
      */
-    protected val ioScope: CoroutineScope = CoroutineScope(Dispatchers.Default)
+    protected val ioScope: CoroutineScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Default
+    )
 
     protected var state: State = State.INIT
     internal var isWritable: Boolean = false
@@ -89,7 +95,7 @@ internal abstract class Transport(
      * @throws IllegalStateException if transport is not open
      */
     fun send(packets: List<EngineIOPacket<*>>) {
-        require(state == State.OPEN) { "Transport not open" }
+        check(state == State.OPEN) { "Transport not open" }
         doSend(packets)
     }
 
@@ -145,6 +151,7 @@ internal abstract class Transport(
      */
     protected fun onClose() {
         state = State.CLOSED
+        isWritable = false
         emit(EVENT_CLOSE)
     }
 
@@ -172,7 +179,7 @@ internal abstract class Transport(
      * @return The constructed URI string
      */
     protected fun uri(secureSchema: String, insecureSchema: String): String {
-        val query = HashMap(options.query)
+        val query = LinkedHashMap(options.query)
         val schema = if (options.isSecure) secureSchema else insecureSchema
 
         val port = buildString {

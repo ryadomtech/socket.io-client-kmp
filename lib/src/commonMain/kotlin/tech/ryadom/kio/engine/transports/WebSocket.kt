@@ -58,7 +58,7 @@ import tech.ryadom.kio.util.putHeaders
  * @property rawMessage A boolean indicating whether messages should be treated as raw Engine.IO packets
  *                      or as Socket.IO packets.
  * @property httpClientFactory A factory for creating HTTP clients, used for establishing the WebSocket connection.
- *                             Defaults to [DefaultHttpClientFactory].
+ *                             Defaults to [tech.ryadom.kio.engine.DefaultHttpClientFactory].
  */
 internal open class WebSocket(
     options: TransportOptions,
@@ -84,15 +84,18 @@ internal open class WebSocket(
                     request = { headers { putHeaders(this, requestHeaders) } }
                 ) {
                     socketSession = this
-                    if (this is DefaultClientWebSocketSession) {
-                        val respHeaders = call.response.headers.toMap()
-                        lpScope.launch {
-                            emit(EVENT_RESPONSE_HEADERS, respHeaders)
-                            onOpen()
-                        }
+                    val respHeaders = (this as? DefaultClientWebSocketSession)
+                        ?.call
+                        ?.response
+                        ?.headers
+                        ?.toMap()
+
+                    lpScope.launch {
+                        respHeaders?.let { emit(EVENT_RESPONSE_HEADERS, it) }
+                        onOpen()
                     }
 
-                    listen()
+                    listen(this)
                 }
             } catch (e: Exception) {
                 lpScope.launch { onError("Ws exception: ${e.message}") }
@@ -102,11 +105,10 @@ internal open class WebSocket(
 
     protected open fun uri() = uri(SecureSchema, InsecureSchema)
 
-    private suspend fun listen() {
+    private suspend fun listen(session: WebSocketSession) {
         while (true) {
             try {
-                val frame = socketSession?.incoming?.receive() ?: break
-                when (frame) {
+                when (val frame = session.incoming.receive()) {
                     is Frame.Text -> onWsText(frame.readText())
                     is Frame.Binary -> onWsBinary(frame.readBytes())
                     is Frame.Close -> {
@@ -116,7 +118,7 @@ internal open class WebSocket(
                     else -> {}
                 }
             } catch (e: Exception) {
-                logger.error(e) { "Error while reading ws frame" }
+                logger.debug { "Stopped reading ws frames: ${e.message}" }
                 break
             }
         }
@@ -125,7 +127,7 @@ internal open class WebSocket(
     }
 
     private fun onWsText(data: String) = lpScope.launch {
-        logger.warn { "[WebSocket] On WS text" }
+        logger.debug { "[WebSocket] On WS text" }
         val packet = try {
             if (rawMessage) EngineIO.decodeWsFrame(data) { it }
             else EngineIO.decodeSocketIO(data)
@@ -139,7 +141,7 @@ internal open class WebSocket(
 
     @OptIn(UnsafeByteStringApi::class)
     private fun onWsBinary(data: ByteArray) = lpScope.launch {
-        logger.warn { "[WebSocket] On WS binary" }
+        logger.debug { "[WebSocket] On WS binary" }
         onPacket(
             EngineIO.decodeWsFrame(
                 UnsafeByteStringOperations.wrapUnsafe(data)
@@ -152,8 +154,10 @@ internal open class WebSocket(
         isWritable = false
 
         ioScope.launch {
-            packets.forEach { pkt ->
-                if (state != State.OPEN) return@forEach
+            var sent = 0
+            for (pkt in packets) {
+                if (state != State.OPEN) break
+
                 try {
                     when (pkt) {
                         is EngineIOPacket.BinaryData ->
@@ -172,20 +176,28 @@ internal open class WebSocket(
                             socketSession?.send(data)
                         }
                     }
+
+                    sent++
                 } catch (e: Exception) {
-                    logger.error(e) { "Error sending packets $packets" }
+                    logger.error(e) { "Error sending packet $pkt" }
+                    lpScope.launch { onError("Ws send error: ${e.message}") }
+                    return@launch
                 }
             }
 
+            // Only the packets that really made it out may be reported as drained, otherwise the
+            // engine drops the remaining ones from its write buffer as if they had been sent.
             lpScope.launch {
                 isWritable = true
-                emit(EVENT_DRAIN, packets.size)
+                emit(EVENT_DRAIN, sent)
             }
         }
     }
 
     override fun doClose(fromOpenState: Boolean) {
-        ioScope.launch { socketSession?.close() }
+        val session = socketSession
+        socketSession = null
+        ioScope.launch { session?.close() }
     }
 
     companion object {

@@ -56,6 +56,7 @@ internal object QSParsingUtils {
      *         Keys and values are URI-decoded.
      *         If a key is empty, the key-value pair is ignored.
      *         If a value is empty after the '=', it's treated as an empty string.
+     *         A pair without '=' at all is treated as a key with an empty value.
      */
     fun decode(qs: String): Map<String, String> {
         if (qs.isEmpty()) {
@@ -63,14 +64,16 @@ internal object QSParsingUtils {
         }
 
         return qs.splitToSequence('&')
-            .mapNotNull {
-                val (key, value) = it.split('=', limit = 2)
+            .mapNotNull { pair ->
+                val separator = pair.indexOf('=')
+                val key = if (separator < 0) pair else pair.substring(0, separator)
                 if (key.isEmpty()) {
                     return@mapNotNull null
                 }
 
-                val decodedValue = value.takeIf { v -> v.isNotEmpty() }
-                    ?.let { v -> UriUtils.decode(v) }
+                val value = if (separator < 0) "" else pair.substring(separator + 1)
+                val decodedValue = value.takeIf { it.isNotEmpty() }
+                    ?.let { UriUtils.decode(it) }
                     ?: ""
 
                 UriUtils.decode(key) to decodedValue

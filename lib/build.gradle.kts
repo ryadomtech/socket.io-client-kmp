@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -6,16 +7,23 @@ plugins {
     alias(libs.plugins.publishing)
 }
 
-private val rootVersion = "0.0.6"
+private val rootVersion = "1.0.0"
 
 kotlin {
-    jvm()
+    jvmToolchain(21)
+
+    jvm {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+            freeCompilerArgs.add("-Xjdk-release=11")
+        }
+    }
 
     iosArm64()
     iosSimulatorArm64()
     iosX64()
 
-    js(IR) {
+    js {
         browser {
         }
         binaries.executable()
@@ -28,14 +36,6 @@ kotlin {
     }
 
     androidTarget {
-        compilations.all {
-            compileTaskProvider.configure {
-                compilerOptions {
-                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-                }
-            }
-        }
-
         publishLibraryVariants("release")
     }
 
@@ -90,6 +90,7 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
             }
         }
     }
@@ -97,15 +98,10 @@ kotlin {
 
 android {
     namespace = "tech.ryadom.kio"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 23
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
@@ -137,7 +133,7 @@ mavenPublishing {
         developers {
             developer {
                 id.set("adkozlovskiy")
-                name.set("Alexey Kozlovsky")
+                name.set("Aleksei Kozlovskiy")
                 email.set("adkozlovskiy@gmail.com")
             }
         }

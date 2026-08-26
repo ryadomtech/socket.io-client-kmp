@@ -1,13 +1,14 @@
 [versions]
 activity-compose = "1.11.0"
-agp = "8.13.1"
-atomicfu = "0.29.0"
-kotlin = "2.2.21"
-publishing = "0.35.0"
-ktor = "3.3.2"
+agp = "8.13.2"
+atomicfu = "0.33.0"
+coroutines = "1.11.0"
+kotlin = "2.4.10"
+publishing = "0.37.0"
+ktor = "3.5.2"
 compose-multiplatform = "1.9.3"
-logging = "2.1.0"
-socket-io-parser = "2.6.0"
+logging = "2.1.1"
+socket-io-parser = "2.8.0"
 
 [libraries]
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
@@ -24,6 +25,7 @@ ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "kto
 logging = { module = "com.diamondedge:logging", version.ref = "logging" }
 
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 
 [plugins]
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

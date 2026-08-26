@@ -79,4 +79,98 @@ class BackoffTest {
             b.jitter = 2.0
         }
     }
+
+
+    @Test
+    fun durationNeverCollapsesToZeroOnVeryLongReconnectionRuns() {
+        val b = Backoff(initialMin = 100, initialMax = 10_000, initialJitter = 0.5)
+
+        // A client reconnecting against a permanently unavailable server easily reaches this many
+        // attempts. The exponential base must not overflow into NaN and produce a 0 ms delay.
+        repeat(5_000) { b.duration() }
+
+        repeat(100) {
+            val duration = b.duration()
+            assertTrue("expected $duration to stay capped at max", duration == 10_000L)
+        }
+    }
+
+    @Test
+    fun durationStaysWithinBoundsWithoutJitter() {
+        val b = Backoff(initialMin = 50, initialMax = 400, initialFactor = 3)
+
+        assertEquals(50L, b.duration())
+        assertEquals(150L, b.duration())
+        assertEquals(400L, b.duration())
+        assertEquals(400L, b.duration())
+    }
+
+    @Test
+    fun maxIsNeverBelowMin() {
+        val b = Backoff(initialMin = 5_000, initialMax = 1_000)
+        assertEquals(5_000L, b.max)
+        assertEquals(5_000L, b.duration())
+    }
+
+    @Test
+    fun raisingMinAboveMaxDoesNotBreakDuration() {
+        val b = Backoff(initialMin = 100, initialMax = 1_000)
+        b.min = 5_000
+
+        assertEquals(5_000L, b.duration())
+        assertEquals(5_000L, b.duration())
+    }
+
+    @Test
+    fun maxSetterKeepsMaxAboveMin() {
+        val b = Backoff(initialMin = 1_000, initialMax = 5_000)
+        b.max = 10
+
+        assertEquals(1_000L, b.max)
+    }
+
+    @Test
+    fun factorIsNeverBelowOne() {
+        val b = Backoff(initialMin = 100, initialMax = 10_000, initialFactor = 0)
+        assertEquals(1, b.factor)
+
+        b.factor = -5
+        assertEquals(1, b.factor)
+
+        assertEquals(100L, b.duration())
+        assertEquals(100L, b.duration())
+    }
+
+    @Test
+    fun minIsNeverNegative() {
+        val b = Backoff(initialMin = -100)
+        assertEquals(0L, b.min)
+
+        b.min = -1
+        assertEquals(0L, b.min)
+    }
+
+    @Test
+    fun constructorRejectsInvalidJitter() {
+        assertFailsWith(IllegalArgumentException::class) {
+            Backoff(initialJitter = 1.0)
+        }
+
+        assertFailsWith(IllegalArgumentException::class) {
+            Backoff(initialJitter = -0.1)
+        }
+    }
+
+    @Test
+    fun attemptsCountsCallsAndResets() {
+        val b = Backoff()
+        assertEquals(0, b.attempts)
+
+        b.duration()
+        b.duration()
+        assertEquals(2, b.attempts)
+
+        b.reset()
+        assertEquals(0, b.attempts)
+    }
 }

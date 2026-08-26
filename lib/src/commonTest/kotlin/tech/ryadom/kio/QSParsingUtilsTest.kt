@@ -147,4 +147,46 @@ class QSParsingUtilsTest {
             result
         )
     }
+
+    @Test
+    fun `decode should treat a pair without separator as an empty value`() {
+        val result = QSParsingUtils.decode("flag&key=value")
+        assertEquals(mapOf("flag" to "", "key" to "value"), result)
+    }
+
+    @Test
+    fun `decode should not fail on a lone key`() {
+        assertEquals(mapOf("flag" to ""), QSParsingUtils.decode("flag"))
+    }
+
+    @Test
+    fun `decode should skip empty segments`() {
+        assertEquals(mapOf("a" to "1", "b" to "2"), QSParsingUtils.decode("a=1&&b=2"))
+    }
+
+    @Test
+    fun `decode should handle non ascii keys and values`() {
+        val result = QSParsingUtils.decode("%D0%BA%D0%BB%D1%8E%D1%87=%D0%B7%D0%BD%D0%B0%D1%87")
+        assertEquals(mapOf("ключ" to "знач"), result)
+    }
+
+    @Test
+    fun `encode and decode should be symmetric for non ascii content`() {
+        val original = mapOf(
+            "имя" to "Алексей",
+            "emoji" to "🚀",
+            "empty" to ""
+        )
+
+        assertEquals(original, QSParsingUtils.decode(QSParsingUtils.encode(original)))
+    }
+
+    @Test
+    fun `encode should preserve insertion order`() {
+        val encoded = QSParsingUtils.encode(
+            linkedMapOf("EIO" to "4", "transport" to "websocket", "sid" to "abc")
+        )
+
+        assertEquals("EIO=4&transport=websocket&sid=abc", encoded)
+    }
 }

@@ -1,6 +1,6 @@
 # Not official Socket IO lib. for usage in Kotlin Multiplatform
 
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.2.0-blue.svg?style=flat&logo=kotlin)](https://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.0-blue.svg?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![Maven Central](https://img.shields.io/maven-central/v/tech.ryadom/kio?color=blue)](https://central.sonatype.com/artifact/tech.ryadom/kio)
 
 ![badge-android](http://img.shields.io/badge/platform-android-6EDB8D.svg?style=flat)
@@ -25,7 +25,7 @@ In your shared module's build.gradle.kts add:
 
 ```Gradle Kotlin DSL
 kotlin.sourceSets.commonMain.dependencies {
-  implementation("tech.ryadom:kio:0.0.4")
+  implementation("tech.ryadom:kio:1.0.0")
 }
 ```
 
@@ -34,18 +34,21 @@ kotlin.sourceSets.commonMain.dependencies {
 val socket: Socket = kioSocket("https://yourdomain.com") {
     // Configure min. log level or set custom logger
     logging {
-        level = LogLevel.INFO
+        logLevel(LogLevel.INFO)
     }
 
     // Configure socket.io options
     options {
-        isSecure = true
-        allowCredentials = true
+        auth = mapOf("token" to "your_auth_token")
+        reconnectionAttempts = 5
     }
 }
 
 socket.open()
 ```
+
+The scheme, host and port are taken from the URI. Its path, if any, is used as the namespace,
+so `https://yourdomain.com/admin` connects to the `/admin` namespace.
 
 ### Listening
 ```Kotlin
@@ -67,11 +70,31 @@ socket.onAny {
 val args = // create your packet
 socket.emit("event", args)
 
-// WARN: Do not send json like this. It will be string like this '{}'
+// WARN: Do not send json like this. It will be sent as a plain string
 socket.emit("event", Json.encodeToString(args))
 
 // Do like that:
-socket.emit("event", Json.encodeToJsonEvent(args))
+socket.emit("event", Json.encodeToJsonElement(args))
+```
+
+Binary payloads are sent as `ByteString` and arrive as `ByteString`:
+
+```Kotlin
+socket.emit("upload", "avatar.png".encodeToByteString())
+```
+
+### Acknowledgements
+```Kotlin
+// Ask the server to acknowledge an event
+socket.emit("event", args, Ack { response ->
+    // response holds whatever the server answered with
+})
+
+// Acknowledge an event the server expects an answer for.
+// The Ack is appended as the last argument of the event
+socket.on("event") { args ->
+    (args.last() as Ack).call("done")
+}
 ```
 
 ### Support

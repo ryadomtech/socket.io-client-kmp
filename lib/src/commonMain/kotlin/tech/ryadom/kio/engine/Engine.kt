@@ -255,8 +255,11 @@ internal class Engine(
     }
 
     private fun onDrain(processedCount: Int) {
-        repeat(processedCount) { writeBuffer.removeAt(0) }
-        prevBufferLen -= processedCount
+        // A transport may report fewer or more packets than the buffer currently holds, e.g. when
+        // the buffer was cleared by a close that raced with the drain notification.
+        val drained = processedCount.coerceIn(0, writeBuffer.size)
+        repeat(drained) { writeBuffer.removeFirst() }
+        prevBufferLen = (prevBufferLen - drained).coerceAtLeast(0)
 
         when {
             writeBuffer.isEmpty() -> emit(EVENT_DRAIN)
@@ -380,7 +383,7 @@ internal class Engine(
                         }
 
                         cleanUp[0]()
-                        transport.once(EVENT_DRAIN) {
+                        transport.once(Transport.EVENT_DRAIN) {
                             emit(EVENT_UPGRADE, transport)
                             setTransport(transport)
                             cleaned = true
