@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -10,13 +11,19 @@ private val rootVersion = "1.0.0"
 
 kotlin {
     jvmToolchain(21)
-    jvm()
+
+    jvm {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+            freeCompilerArgs.add("-Xjdk-release=11")
+        }
+    }
 
     iosArm64()
     iosSimulatorArm64()
     iosX64()
 
-    js(IR) {
+    js {
         browser {
         }
         binaries.executable()
@@ -29,14 +36,6 @@ kotlin {
     }
 
     androidTarget {
-        compilations.all {
-            compileTaskProvider.configure {
-                compilerOptions {
-                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-                }
-            }
-        }
-
         publishLibraryVariants("release")
     }
 
@@ -134,7 +133,7 @@ mavenPublishing {
         developers {
             developer {
                 id.set("adkozlovskiy")
-                name.set("Alexey Kozlovsky")
+                name.set("Aleksei Kozlovskiy")
                 email.set("adkozlovskiy@gmail.com")
             }
         }

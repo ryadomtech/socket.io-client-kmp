@@ -1,6 +1,6 @@
 # Not official Socket IO lib. for usage in Kotlin Multiplatform
 
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.2.0-blue.svg?style=flat&logo=kotlin)](https://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.0-blue.svg?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![Maven Central](https://img.shields.io/maven-central/v/tech.ryadom/kio?color=blue)](https://central.sonatype.com/artifact/tech.ryadom/kio)
 
 ![badge-android](http://img.shields.io/badge/platform-android-6EDB8D.svg?style=flat)
